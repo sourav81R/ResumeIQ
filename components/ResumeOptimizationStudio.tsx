@@ -33,8 +33,10 @@ type ResumeOptimizationStudioProps = {
 type TemplateMode = ResumeTemplate["photoMode"];
 const MAX_PHOTO_FILE_BYTES = 4 * 1024 * 1024;
 const PHOTO_DIMENSION = 256;
-const MAX_EXPERIENCE_ITEMS = 6;
-const MAX_PROJECT_ITEMS = 6;
+const MAX_EXPERIENCE_ITEMS = 12;
+const MAX_PROJECT_ITEMS = 12;
+const MAX_EDUCATION_ITEMS = 8;
+const MAX_CERTIFICATION_ITEMS = 15;
 
 function createEmptyExperience(): OptimizedResumeContent["experience"][number] {
   return {
@@ -54,6 +56,16 @@ function createEmptyProject(): OptimizedResumeContent["projects"][number] {
     tech: [],
     link: "",
     bullets: []
+  };
+}
+
+function createEmptyEducation(): OptimizedResumeContent["education"][number] {
+  return {
+    institution: "",
+    degree: "",
+    startDate: "",
+    endDate: "",
+    details: []
   };
 }
 
@@ -376,6 +388,70 @@ export default function ResumeOptimizationStudio({
       return {
         ...current,
         projects: moveItem(current.projects, index, nextIndex)
+      };
+    });
+  };
+
+  const handleAddEducation = () => {
+    if (!draftContent) return;
+    if (draftContent.education.length >= MAX_EDUCATION_ITEMS) {
+      setError(`You can add up to ${MAX_EDUCATION_ITEMS} education entries.`);
+      return;
+    }
+
+    setError("");
+    setDraftContent((current) =>
+      current ? { ...current, education: [...current.education, createEmptyEducation()] } : current
+    );
+  };
+
+  const handleRemoveEducation = (index: number) => {
+    setDraftContent((current) => {
+      if (!current) return current;
+      const education = current.education.filter((_, entryIndex) => entryIndex !== index);
+      return { ...current, education };
+    });
+  };
+
+  const handleMoveEducation = (index: number, direction: "up" | "down") => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    setDraftContent((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        education: moveItem(current.education, index, nextIndex)
+      };
+    });
+  };
+
+  const handleAddCertification = () => {
+    if (!draftContent) return;
+    if (draftContent.certifications.length >= MAX_CERTIFICATION_ITEMS) {
+      setError(`You can add up to ${MAX_CERTIFICATION_ITEMS} certifications.`);
+      return;
+    }
+
+    setError("");
+    setDraftContent((current) =>
+      current ? { ...current, certifications: [...current.certifications, ""] } : current
+    );
+  };
+
+  const handleRemoveCertification = (index: number) => {
+    setDraftContent((current) => {
+      if (!current) return current;
+      const certifications = current.certifications.filter((_, entryIndex) => entryIndex !== index);
+      return { ...current, certifications };
+    });
+  };
+
+  const handleMoveCertification = (index: number, direction: "up" | "down") => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    setDraftContent((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        certifications: moveItem(current.certifications, index, nextIndex)
       };
     });
   };
@@ -1084,6 +1160,129 @@ export default function ResumeOptimizationStudio({
               )}
             </div>
 
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-sm font-semibold text-slate-800">Education</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-8 rounded-lg bg-white px-2.5 text-xs"
+                  onClick={handleAddEducation}
+                  disabled={draftContent.education.length >= MAX_EDUCATION_ITEMS}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Education
+                </Button>
+              </div>
+              {draftContent.education.length ? (
+                draftContent.education.map((item, index) => (
+                  <div key={`${item.institution}-${index}`} className="rounded-xl border border-slate-200 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-800">Education #{index + 1}</p>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          onClick={() => handleMoveEducation(index, "up")}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          onClick={() => handleMoveEducation(index, "down")}
+                          disabled={index === draftContent.education.length - 1}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                          onClick={() => handleRemoveEducation(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="Institution"
+                        value={item.institution}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const education = [...current.education];
+                            education[index] = { ...education[index], institution: event.target.value };
+                            return { ...current, education };
+                          })
+                        }
+                      />
+                      <Input
+                        placeholder="Degree"
+                        value={item.degree}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const education = [...current.education];
+                            education[index] = { ...education[index], degree: event.target.value };
+                            return { ...current, education };
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="Start Date"
+                        value={item.startDate}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const education = [...current.education];
+                            education[index] = { ...education[index], startDate: event.target.value };
+                            return { ...current, education };
+                          })
+                        }
+                      />
+                      <Input
+                        placeholder="End Date"
+                        value={item.endDate}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const education = [...current.education];
+                            education[index] = { ...education[index], endDate: event.target.value };
+                            return { ...current, education };
+                          })
+                        }
+                      />
+                    </div>
+                    <Textarea
+                      rows={3}
+                      className="mt-2"
+                      placeholder="Education details (one per line)"
+                      value={toTextAreaValue(item.details)}
+                      onChange={(event) =>
+                        setDraftContent((current) => {
+                          if (!current) return current;
+                          const education = [...current.education];
+                          education[index] = { ...education[index], details: fromTextAreaValue(event.target.value) };
+                          return { ...current, education };
+                        })
+                      }
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-600">
+                  No education entries yet. Click Add Education to include degrees or certifications.
+                </p>
+              )}
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1">
                 <Label>Core Skills (one per line)</Label>
@@ -1127,6 +1326,72 @@ export default function ResumeOptimizationStudio({
                   }
                 />
               </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-sm font-semibold text-slate-800">Certifications</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-8 rounded-lg bg-white px-2.5 text-xs"
+                  onClick={handleAddCertification}
+                  disabled={draftContent.certifications.length >= MAX_CERTIFICATION_ITEMS}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Certification
+                </Button>
+              </div>
+              {draftContent.certifications.length ? (
+                <div className="space-y-2">
+                  {draftContent.certifications.map((certification, index) => (
+                    <div key={`${index}-${certification}`} className="flex items-center gap-2">
+                      <Input
+                        placeholder="Certification"
+                        value={certification}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const certifications = [...current.certifications];
+                            certifications[index] = event.target.value;
+                            return { ...current, certifications };
+                          })
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                        onClick={() => handleMoveCertification(index, "up")}
+                        disabled={index === 0}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                        onClick={() => handleMoveCertification(index, "down")}
+                        disabled={index === draftContent.certifications.length - 1}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="h-9 rounded-lg px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                        onClick={() => handleRemoveCertification(index)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-600">
+                  No certifications yet. Click Add Certification to add them.
+                </p>
+              )}
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
