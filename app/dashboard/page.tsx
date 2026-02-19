@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileSearch, UploadCloud } from "lucide-react";
+import { FileSearch, Sparkles, UploadCloud } from "lucide-react";
 
 import ResumeCard from "@/components/ResumeCard";
 import { Button } from "@/components/ui/button";
@@ -31,12 +31,21 @@ export default async function DashboardPage() {
               Track ATS score trends and review optimization insights.
             </p>
           </div>
-          <Button asChild className="h-11 rounded-xl sm:h-12">
-            <Link href="/upload">
-              <UploadCloud className="mr-2 h-4 w-4" />
-              New Analysis
-            </Link>
-          </Button>
+          {resumes.length === 0 ? (
+            <Button asChild className="h-11 rounded-xl bg-cyan-700 hover:bg-cyan-800 sm:h-12">
+              <Link href="/templates">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Build First Resume
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild className="h-11 rounded-xl sm:h-12">
+              <Link href="/upload">
+                <UploadCloud className="mr-2 h-4 w-4" />
+                New Analysis
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -76,13 +85,15 @@ export default async function DashboardPage() {
       {resumes.length === 0 ? (
         <Card className="border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-10 text-center sm:py-12">
-            <FileSearch className="mb-3 h-9 w-9 text-slate-400" />
-            <p className="text-lg font-semibold text-slate-900">No resume reports yet</p>
-            <p className="mt-1 text-sm text-slate-600">
-              Upload your first resume to get ATS scoring and AI suggestions.
+            <div className="mb-4 rounded-full border border-cyan-200 bg-cyan-50 p-4 text-cyan-700">
+              <FileSearch className="h-8 w-8" />
+            </div>
+            <p className="text-xl font-semibold text-slate-900">You don&apos;t have any resumes yet.</p>
+            <p className="mt-2 max-w-xl text-sm text-slate-600">
+              Start from a professional template and build your first ATS-ready resume directly inside ResumeIQ.
             </p>
-            <Button asChild className="mt-4 rounded-xl">
-              <Link href="/upload">Upload Resume</Link>
+            <Button asChild className="mt-5 h-12 rounded-xl bg-cyan-700 px-6 text-base font-semibold hover:bg-cyan-800">
+              <Link href="/templates">Select a Template and Build Your First Resume</Link>
             </Button>
           </CardContent>
         </Card>

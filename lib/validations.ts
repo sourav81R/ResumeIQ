@@ -73,4 +73,15 @@ export const updateOptimizedResumeSchema = z.object({
   content: resumeContentSchema
 });
 
+export const manualResumeCreateSchema = z.object({
+  templateId: z.string().min(2).max(80),
+  content: resumeContentSchema
+});
+
+export const manualResumeUpdateSchema = z.object({
+  templateId: z.string().min(2).max(80),
+  versionId: z.string().min(1),
+  content: resumeContentSchema
+});
+
 
