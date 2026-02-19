@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -48,17 +48,23 @@ export default function DeleteReportButton({ resumeId, jobRole, className }: Del
     <Button
       type="button"
       variant="ghost"
-      size="icon"
       onClick={handleDelete}
       disabled={isDeleting}
       aria-label={`Delete ${jobRole} report`}
       title="Delete report"
       className={cn(
-        "h-8 w-8 rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600",
+        "h-8 rounded-md px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 hover:text-rose-700",
         className
       )}
     >
-      {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+      {isDeleting ? (
+        <span className="inline-flex items-center gap-1">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          Deleting...
+        </span>
+      ) : (
+        "Delete"
+      )}
     </Button>
   );
 }
