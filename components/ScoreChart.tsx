@@ -1,7 +1,3 @@
-"use client";
-
-import { motion } from "framer-motion";
-
 type ScoreChartProps = {
   score: number;
 };
@@ -23,17 +19,14 @@ export default function ScoreChart({ score }: ScoreChartProps) {
           strokeWidth={strokeWidth}
           className="fill-none stroke-slate-200"
         />
-        <motion.circle
+        <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
           strokeWidth={strokeWidth}
           strokeLinecap="round"
           className="fill-none stroke-cyan-600"
-          initial={{ strokeDashoffset: circumference }}
-          animate={{ strokeDashoffset: progress }}
-          transition={{ duration: 0.9, ease: "easeOut" }}
-          style={{ strokeDasharray: circumference }}
+          style={{ strokeDasharray: circumference, strokeDashoffset: progress }}
         />
       </svg>
 

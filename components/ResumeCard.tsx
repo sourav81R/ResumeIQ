@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { CalendarDays, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 
@@ -22,7 +19,7 @@ function scoreVariant(score: number): "success" | "warning" | "danger" {
 
 export default function ResumeCard({ resume }: ResumeCardProps) {
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+    <div>
       <Card className="h-full border-slate-200 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
         <CardHeader className="space-y-3">
           <div className="flex items-center justify-between gap-3">
@@ -50,7 +47,7 @@ export default function ResumeCard({ resume }: ResumeCardProps) {
           </Button>
         </CardFooter>
       </Card>
-    </motion.div>
+    </div>
   );
 }
 

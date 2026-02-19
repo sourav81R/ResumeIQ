@@ -1,7 +1,5 @@
 import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
 import { Auth, GoogleAuthProvider, getAuth } from "firebase/auth";
-import { Firestore, getFirestore } from "firebase/firestore";
-import { FirebaseStorage, getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,8 +15,6 @@ export const googleProvider = new GoogleAuthProvider();
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
-let db: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
 
 function getFirebaseApp() {
   if (app) {
@@ -34,34 +30,6 @@ export function getFirebaseAuth() {
     auth = getAuth(getFirebaseApp());
   }
   return auth;
-}
-
-export function getFirebaseDb() {
-  if (!db) {
-    db = getFirestore(getFirebaseApp());
-  }
-  return db;
-}
-
-export function getFirebaseStorage() {
-  if (!storage) {
-    storage = getStorage(getFirebaseApp());
-  }
-  return storage;
-}
-
-export async function getFirebaseAnalytics() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const [{ getAnalytics, isSupported }] = await Promise.all([import("firebase/analytics")]);
-
-  if (!(await isSupported())) {
-    return null;
-  }
-
-  return getAnalytics(getFirebaseApp());
 }
 
 

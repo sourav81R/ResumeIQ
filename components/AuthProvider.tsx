@@ -17,6 +17,7 @@ import { getFirebaseAuth, googleProvider } from "@/lib/firebase";
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  sessionReady: boolean;
   signInWithGoogle: () => Promise<void>;
   signInWithEmailPassword: (email: string, password: string) => Promise<void>;
   registerWithEmailPassword: (email: string, password: string) => Promise<void>;
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionReady, setSessionReady] = useState(false);
 
   const syncServerSession = async (nextUser: User | null) => {
     if (!nextUser) {
@@ -35,47 +37,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const idToken = await nextUser.getIdToken();
-    await fetch("/api/auth/session", {
+    const response = await fetch("/api/auth/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken })
     });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      const message =
+        data && typeof data.error === "string" && data.error.trim()
+          ? data.error
+          : "Unable to create server session.";
+      throw new Error(message);
+    }
   };
 
   useEffect(() => {
     const auth = getFirebaseAuth();
-    let unsubscribe: (() => void) | undefined;
 
-    (async () => {
-      try {
-        // Resolve redirect sign-in result when returning from Google auth page.
-        await getRedirectResult(auth);
-      } catch {
-        // Ignore here; final auth state is handled below.
+    const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+      setUser(nextUser);
+      setLoading(false);
+      setSessionReady(false);
+
+      if (!nextUser) {
+        setSessionReady(true);
+        return;
       }
 
-      unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
-        setUser(nextUser);
-
-        try {
-          await syncServerSession(nextUser);
-        } catch {
+      // Avoid blocking app render on session sync.
+      void syncServerSession(nextUser)
+        .catch(() => {
           // Keep client auth state even if server session sync fails.
-        }
+        })
+        .finally(() => {
+          setSessionReady(true);
+        });
+    });
 
-        setLoading(false);
-      });
-    })();
+    // Resolve redirect sign-in result in the background for popup fallback flows.
+    void getRedirectResult(auth).catch(() => {
+      // Final auth state is handled by onAuthStateChanged.
+    });
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
   const value = useMemo(
     () => ({
       user,
       loading,
+      sessionReady,
       signInWithGoogle: async () => {
         const auth = getFirebaseAuth();
         try {
@@ -112,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth);
       }
     }),
-    [loading, user]
+    [loading, sessionReady, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

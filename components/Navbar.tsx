@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, Menu, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 
@@ -94,57 +93,50 @@ export default function Navbar() {
         </Button>
       </div>
 
-      <AnimatePresence>
-        {open ? (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="overflow-hidden border-t border-slate-200 bg-white md:hidden"
-          >
-            <div className="container flex flex-col gap-2 py-4">
-              {isLoggedIn ? (
-                <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white">
-                    {userInitial}
-                  </span>
-                  Hello, {greetingName}
-                </div>
-              ) : null}
+      {open ? (
+        <div className="overflow-hidden border-t border-slate-200 bg-white md:hidden">
+          <div className="container flex flex-col gap-2 py-4">
+            {isLoggedIn ? (
+              <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white">
+                  {userInitial}
+                </span>
+                Hello, {greetingName}
+              </div>
+            ) : null}
 
-              {navLinks.map((item) => (
-                <Link
-                  key={item.href}
-                  href={getNavHref(item.href)}
-                  className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-                  onClick={() => setOpen(false)}
-                >
-                  {item.label}
-                </Link>
-              ))}
+            {navLinks.map((item) => (
+              <Link
+                key={item.href}
+                href={getNavHref(item.href)}
+                className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                onClick={() => setOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
 
-              {!loading && !isLoggedIn ? (
-                <Button asChild onClick={() => setOpen(false)}>
-                  <Link href="/login">Login</Link>
-                </Button>
-              ) : null}
+            {!loading && !isLoggedIn ? (
+              <Button asChild onClick={() => setOpen(false)}>
+                <Link href="/login">Login</Link>
+              </Button>
+            ) : null}
 
-              {isLoggedIn ? (
-                <Button
-                  variant="outline"
-                  onClick={async () => {
-                    await signOutUser();
-                    setOpen(false);
-                    router.push("/");
-                  }}
-                >
-                  Logout
-                </Button>
-              ) : null}
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+            {isLoggedIn ? (
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  await signOutUser();
+                  setOpen(false);
+                  router.push("/");
+                }}
+              >
+                Logout
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }

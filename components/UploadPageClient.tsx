@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { FileUp } from "lucide-react";
 
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -29,11 +28,7 @@ export default function UploadPageClient() {
 
   return (
     <div className="container py-8 md:py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mx-auto w-full max-w-2xl"
-      >
+      <div className="mx-auto w-full max-w-2xl">
         <Card className="border-slate-200 shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl">Upload Resume</CardTitle>
@@ -141,7 +136,7 @@ export default function UploadPageClient() {
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
           </CardContent>
         </Card>
-      </motion.div>
+      </div>
     </div>
   );
 }

@@ -71,7 +71,7 @@ function normalizeAuthError(error: unknown) {
 
 export default function LoginPageClient({ redirectPath }: LoginPageClientProps) {
   const router = useRouter();
-  const { user, loading, signInWithGoogle, signInWithEmailPassword, registerWithEmailPassword } =
+  const { user, loading, sessionReady, signInWithGoogle, signInWithEmailPassword, registerWithEmailPassword } =
     useAuth();
 
   const [email, setEmail] = useState("");
@@ -94,10 +94,11 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
   };
 
   useEffect(() => {
-    if (!loading && user) {
+    if (!loading && sessionReady && user) {
       router.replace(redirectPath);
+      router.refresh();
     }
-  }, [loading, redirectPath, router, user]);
+  }, [loading, redirectPath, router, sessionReady, user]);
 
   return (
     <div className="container flex min-h-[calc(100vh-4rem)] items-center justify-center py-6">
@@ -165,6 +166,7 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
               try {
                 await signInWithEmailPassword(email.trim(), password);
                 router.replace(redirectPath);
+                router.refresh();
               } catch (err) {
                 setError(normalizeAuthError(err));
               } finally {
@@ -192,6 +194,8 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
 
               try {
                 await signInWithGoogle();
+                router.replace(redirectPath);
+                router.refresh();
               } catch (err) {
                 setError(normalizeAuthError(err));
                 setBusy(false);
@@ -240,6 +244,7 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
                 try {
                   await registerWithEmailPassword(email.trim(), password);
                   router.replace(redirectPath);
+                  router.refresh();
                 } catch (err) {
                   setError(normalizeAuthError(err));
                 } finally {
