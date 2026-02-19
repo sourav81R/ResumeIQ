@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, PDFFont, StandardFonts, rgb } from "pdf-lib";
 
 import { requireApiUser } from "@/lib/auth-server";
-import {
-  compactOptimizedResumeContent,
-  truncateResumeText
-} from "@/lib/optimized-resume-render";
+import { compactOptimizedResumeContent } from "@/lib/optimized-resume-render";
 import { getOptimizedResumeById } from "@/lib/optimized-resume-store";
+import { RESUME_LAYOUT, resumeContentWidth } from "@/lib/resume-layout";
 import { getTemplateById } from "@/lib/resume-templates";
 
 type Params = {
@@ -50,33 +48,50 @@ function decodeImageDataUrl(dataUrl: string) {
   return { mimeType, bytes };
 }
 
+function parseHexAccent(value: string) {
+  const hex = /^#[0-9a-f]{6}$/i.test(value) ? value : "#0e7490";
+  return rgb(
+    parseInt(hex.slice(1, 3), 16) / 255,
+    parseInt(hex.slice(3, 5), 16) / 255,
+    parseInt(hex.slice(5, 7), 16) / 255
+  );
+}
+
 async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimizedResumeById>>>) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
   const template = getTemplateById(version.templateId);
-  const accentHex = template?.accent || "#0e7490";
-  const accent = rgb(
-    parseInt(accentHex.slice(1, 3), 16) / 255,
-    parseInt(accentHex.slice(3, 5), 16) / 255,
-    parseInt(accentHex.slice(5, 7), 16) / 255
-  );
+  const accent = parseHexAccent(template?.accent || "#0e7490");
   const textColor = rgb(0.12, 0.15, 0.22);
   const mutedColor = rgb(0.35, 0.39, 0.46);
   const dividerColor = rgb(0.84, 0.88, 0.92);
 
   const content = compactOptimizedResumeContent(version.content);
-  const pageWidth = 595.28;
-  const pageHeight = 841.89;
-  const margin = 34;
-  const maxWidth = pageWidth - margin * 2;
+  const pageWidth = RESUME_LAYOUT.pageWidth;
+  const pageHeight = RESUME_LAYOUT.pageHeight;
+  const margin = RESUME_LAYOUT.margin;
+  const bottom = margin;
+  const maxWidth = resumeContentWidth();
+
   let page = pdfDoc.addPage([pageWidth, pageHeight]);
   let y = pageHeight - margin;
-  const bottom = margin;
 
-  const availableLines = (lineHeight: number) => {
-    return Math.max(0, Math.floor((y - bottom) / lineHeight));
+  const newPage = () => {
+    page = pdfDoc.addPage([pageWidth, pageHeight]);
+    y = pageHeight - margin;
+  };
+
+  const ensureSpace = (height: number) => {
+    if (y - height < bottom) {
+      newPage();
+    }
+  };
+
+  const gap = (value: number) => {
+    ensureSpace(value);
+    y -= value;
   };
 
   const drawWrapped = (
@@ -90,25 +105,18 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
       lineGap?: number;
     }
   ) => {
-    const size = options?.size ?? 10;
-    const lineGap = options?.lineGap ?? 2.8;
+    if (!text.trim()) return;
+
+    const size = options?.size ?? RESUME_LAYOUT.font.body;
+    const lineGap = options?.lineGap ?? RESUME_LAYOUT.lineGap.body;
     const fontToUse = options?.bold ? bold : font;
     const width = options?.width ?? maxWidth;
     const x = options?.x ?? margin;
     const lines = wrapText(text, width, fontToUse, size);
     const lineHeight = size + lineGap;
-    const maxLines = availableLines(lineHeight);
-    if (maxLines <= 0) {
-      return false;
-    }
 
-    const truncated = lines.length > maxLines;
-    const drawLines = truncated ? lines.slice(0, maxLines) : lines;
-    if (truncated && drawLines.length) {
-      drawLines[drawLines.length - 1] = truncateResumeText(drawLines[drawLines.length - 1], 120);
-    }
-
-    for (const line of drawLines) {
+    for (const line of lines) {
+      ensureSpace(lineHeight);
       page.drawText(line, {
         x,
         y: y - size,
@@ -118,8 +126,6 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
       });
       y -= lineHeight;
     }
-
-    return !truncated;
   };
 
   const drawLeftRight = (left: string, right: string, size: number, isBold = false) => {
@@ -128,15 +134,11 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
     const leftWidthMax = right ? maxWidth - rightWidth - 12 : maxWidth;
     const leftLines = wrapText(left, Math.max(120, leftWidthMax), fontToUse, size);
     const rightLines = right ? wrapText(right, Math.min(190, maxWidth * 0.34), fontToUse, size) : [];
-    const lineHeight = size + 2.4;
-    const neededLines = Math.max(leftLines.length, rightLines.length || 1);
-    const maxLines = availableLines(lineHeight);
-    if (maxLines <= 0) {
-      return false;
-    }
+    const lineHeight = size + RESUME_LAYOUT.lineGap.tight;
+    const lineCount = Math.max(leftLines.length, rightLines.length || 1);
 
-    const lines = Math.min(neededLines, maxLines);
-    for (let i = 0; i < lines; i += 1) {
+    for (let i = 0; i < lineCount; i += 1) {
+      ensureSpace(lineHeight);
       const leftLine = leftLines[i] || "";
       const rightLine = rightLines[i] || "";
       page.drawText(leftLine, {
@@ -158,23 +160,10 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
       }
       y -= lineHeight;
     }
-
-    return lines === neededLines;
-  };
-
-  const gap = (value: number) => {
-    if (y - value < bottom) {
-      y = bottom;
-      return false;
-    }
-    y -= value;
-    return true;
   };
 
   const drawDivider = () => {
-    if (y - 2 < bottom) {
-      return false;
-    }
+    ensureSpace(3);
     const lineY = y - 1;
     page.drawLine({
       start: { x: margin, y: lineY },
@@ -183,43 +172,52 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
       thickness: 0.8
     });
     y -= 2;
-    return true;
   };
 
   const drawSectionTitle = (title: string) => {
-    if (!gap(2)) return false;
-    if (!drawWrapped(title, { size: 10.5, bold: true, color: accent, lineGap: 1.8 })) return false;
-    if (!gap(2)) return false;
-    return drawDivider();
+    gap(3);
+    ensureSpace(18);
+    drawWrapped(title, {
+      size: RESUME_LAYOUT.font.sectionTitle,
+      bold: true,
+      color: accent,
+      lineGap: RESUME_LAYOUT.lineGap.sectionTitle
+    });
+    gap(1);
+    drawDivider();
+    gap(2);
   };
 
+  const showPhotoSlot = template?.photoMode === "with-photo" || Boolean(content.header.photoUrl);
   const headerTop = y;
-  const photoSize = 78;
-  const photoGap = 16;
   let photoBottom = headerTop;
-  const hasPhoto = Boolean(content.header.photoUrl);
-  const showPhotoSlot = (template?.photoMode === "with-photo") || hasPhoto;
-  const headerTextWidth = showPhotoSlot ? maxWidth - photoSize - photoGap : maxWidth;
+  const headerTextWidth = showPhotoSlot
+    ? maxWidth - RESUME_LAYOUT.photoSize - RESUME_LAYOUT.headerGap
+    : maxWidth;
+
+  ensureSpace(showPhotoSlot ? 96 : 78);
 
   if (showPhotoSlot) {
-    const photoX = pageWidth - margin - photoSize;
-    const photoY = headerTop - photoSize + 1;
+    const photoX = pageWidth - margin - RESUME_LAYOUT.photoSize;
+    const photoY = headerTop - RESUME_LAYOUT.photoSize + 1;
     photoBottom = photoY - 4;
 
-    if (hasPhoto && content.header.photoUrl) {
+    if (content.header.photoUrl) {
       const decoded = decodeImageDataUrl(content.header.photoUrl);
       if (decoded) {
         try {
           const embedded =
-            decoded.mimeType === "image/png" ? await pdfDoc.embedPng(decoded.bytes) : await pdfDoc.embedJpg(decoded.bytes);
+            decoded.mimeType === "image/png"
+              ? await pdfDoc.embedPng(decoded.bytes)
+              : await pdfDoc.embedJpg(decoded.bytes);
           page.drawImage(embedded, {
             x: photoX,
             y: photoY,
-            width: photoSize,
-            height: photoSize
+            width: RESUME_LAYOUT.photoSize,
+            height: RESUME_LAYOUT.photoSize
           });
         } catch {
-          // If image decode fails, draw empty photo slot below.
+          // Keep empty frame if image decode fails.
         }
       }
     }
@@ -227,8 +225,8 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
     page.drawRectangle({
       x: photoX,
       y: photoY,
-      width: photoSize,
-      height: photoSize,
+      width: RESUME_LAYOUT.photoSize,
+      height: RESUME_LAYOUT.photoSize,
       borderColor: dividerColor,
       borderWidth: 0.9
     });
@@ -237,37 +235,32 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
   drawWrapped(content.header.name, {
     x: margin,
     width: headerTextWidth,
-    size: 18.5,
+    size: RESUME_LAYOUT.font.name,
     bold: true,
     color: accent,
-    lineGap: 2.5
+    lineGap: RESUME_LAYOUT.lineGap.name
   });
   drawWrapped(content.header.role, {
     x: margin,
     width: headerTextWidth,
-    size: 10.8,
+    size: RESUME_LAYOUT.font.role,
     color: textColor,
-    lineGap: 2.4
+    lineGap: RESUME_LAYOUT.lineGap.role
   });
-  drawWrapped(
-    [content.header.email, content.header.phone, content.header.location]
-      .filter(Boolean)
-      .join("  |  "),
-    {
-      x: margin,
-      width: headerTextWidth,
-      size: 9.2,
-      color: mutedColor,
-      lineGap: 2.2
-    }
-  );
+  drawWrapped([content.header.email, content.header.phone, content.header.location].filter(Boolean).join(" | "), {
+    x: margin,
+    width: headerTextWidth,
+    size: RESUME_LAYOUT.font.contact,
+    color: mutedColor,
+    lineGap: RESUME_LAYOUT.lineGap.contact
+  });
   if (content.header.links.length) {
-    drawWrapped(content.header.links.join("  |  "), {
+    drawWrapped(content.header.links.join(" | "), {
       x: margin,
       width: headerTextWidth,
-      size: 8.8,
+      size: RESUME_LAYOUT.font.link,
       color: mutedColor,
-      lineGap: 2.1
+      lineGap: RESUME_LAYOUT.lineGap.contact
     });
   }
 
@@ -277,81 +270,116 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
 
   gap(6);
   drawDivider();
+  gap(2);
 
   if (content.summary) {
-    if (drawSectionTitle("PROFESSIONAL SUMMARY")) {
-      drawWrapped(content.summary, { size: 9.6, lineGap: 2.3 });
-    }
+    drawSectionTitle("PROFESSIONAL SUMMARY");
+    drawWrapped(content.summary, { size: RESUME_LAYOUT.font.body, lineGap: RESUME_LAYOUT.lineGap.body });
   }
 
   if (content.skills.core.length || content.skills.tools.length || content.skills.soft.length) {
-    if (drawSectionTitle("SKILLS")) {
-      if (content.skills.core.length) {
-        drawWrapped(`Core: ${content.skills.core.join(", ")}`, { size: 9.2, lineGap: 2.1 });
-      }
-      if (content.skills.tools.length) {
-        drawWrapped(`Tools: ${content.skills.tools.join(", ")}`, { size: 9.2, lineGap: 2.1 });
-      }
-      if (content.skills.soft.length) {
-        drawWrapped(`Soft: ${content.skills.soft.join(", ")}`, { size: 9.2, lineGap: 2.1 });
-      }
+    drawSectionTitle("SKILLS");
+    if (content.skills.core.length) {
+      drawWrapped(`Core: ${content.skills.core.join(", ")}`, {
+        size: RESUME_LAYOUT.font.bodyTight,
+        lineGap: RESUME_LAYOUT.lineGap.tight
+      });
+    }
+    if (content.skills.tools.length) {
+      drawWrapped(`Tools: ${content.skills.tools.join(", ")}`, {
+        size: RESUME_LAYOUT.font.bodyTight,
+        lineGap: RESUME_LAYOUT.lineGap.tight
+      });
+    }
+    if (content.skills.soft.length) {
+      drawWrapped(`Soft: ${content.skills.soft.join(", ")}`, {
+        size: RESUME_LAYOUT.font.bodyTight,
+        lineGap: RESUME_LAYOUT.lineGap.tight
+      });
     }
   }
 
-  if (content.experience.length && drawSectionTitle("EXPERIENCE")) {
+  if (content.experience.length) {
+    drawSectionTitle("EXPERIENCE");
     for (const exp of content.experience) {
       const dates = [exp.startDate, exp.endDate].filter(Boolean).join(" - ");
-      const mainLine = [exp.role, exp.company].filter(Boolean).join(" | ") || "Role | Company";
-      if (!drawLeftRight(mainLine, dates, 9.4, true)) break;
-      if (exp.location && !drawWrapped(exp.location, { size: 8.7, color: mutedColor, lineGap: 2 })) {
-        break;
+      const line = [exp.role, exp.company].filter(Boolean).join(" | ") || "Role | Company";
+      drawLeftRight(line, dates, 9.4, true);
+      if (exp.location) {
+        drawWrapped(exp.location, { size: RESUME_LAYOUT.font.meta, color: mutedColor, lineGap: RESUME_LAYOUT.lineGap.meta });
       }
-
       for (const bullet of exp.bullets) {
-        if (!drawWrapped(`- ${bullet}`, { x: margin + 7, width: maxWidth - 7, size: 9.2, lineGap: 2.1 })) {
-          break;
-        }
+        drawWrapped(`• ${bullet}`, {
+          x: margin + 7,
+          width: maxWidth - 7,
+          size: RESUME_LAYOUT.font.bodyTight,
+          lineGap: RESUME_LAYOUT.lineGap.tight
+        });
       }
-      if (!gap(2.2)) break;
+      gap(2.1);
     }
   }
 
-  if (content.projects.length && drawSectionTitle("PROJECTS")) {
+  if (content.projects.length) {
+    drawSectionTitle("PROJECTS");
     for (const project of content.projects) {
       const title = [project.name, project.role].filter(Boolean).join(" - ") || "Project";
-      if (!drawWrapped(title, { size: 9.4, bold: true, lineGap: 2 })) break;
-      if (project.tech.length && !drawWrapped(`Tech: ${project.tech.join(", ")}`, { size: 8.7, color: mutedColor })) {
-        break;
+      drawWrapped(title, { size: 9.3, bold: true, lineGap: 2 });
+      if (project.tech.length) {
+        drawWrapped(`Tech Stack: ${project.tech.join(", ")}`, {
+          size: RESUME_LAYOUT.font.meta,
+          color: mutedColor,
+          lineGap: RESUME_LAYOUT.lineGap.meta
+        });
       }
-      if (project.link && !drawWrapped(`Link: ${project.link}`, { size: 8.7, color: mutedColor })) {
-        break;
+      if (project.bullets.length) {
+        drawWrapped("Project Description:", {
+          size: RESUME_LAYOUT.font.meta,
+          bold: true,
+          color: mutedColor,
+          lineGap: RESUME_LAYOUT.lineGap.meta
+        });
       }
-
       for (const bullet of project.bullets) {
-        if (!drawWrapped(`- ${bullet}`, { x: margin + 7, width: maxWidth - 7, size: 9.1, lineGap: 2.1 })) {
-          break;
-        }
+        drawWrapped(`• ${bullet}`, {
+          x: margin + 7,
+          width: maxWidth - 7,
+          size: 9,
+          lineGap: RESUME_LAYOUT.lineGap.tight
+        });
       }
-      if (!gap(2.2)) break;
+      if (project.link) {
+        drawWrapped(`GitHub Repo: ${project.link}`, {
+          size: RESUME_LAYOUT.font.meta,
+          color: mutedColor,
+          lineGap: RESUME_LAYOUT.lineGap.meta
+        });
+      }
+      gap(2.1);
     }
   }
 
-  if (content.education.length && drawSectionTitle("EDUCATION")) {
+  if (content.education.length) {
+    drawSectionTitle("EDUCATION");
     for (const edu of content.education) {
       const dates = [edu.startDate, edu.endDate].filter(Boolean).join(" - ");
       const line = [edu.degree, edu.institution].filter(Boolean).join(" | ") || "Degree | Institution";
-      if (!drawLeftRight(line, dates, 9.3, true)) break;
+      drawLeftRight(line, dates, 9.3, true);
       for (const detail of edu.details) {
-        if (!drawWrapped(`- ${detail}`, { x: margin + 7, width: maxWidth - 7, size: 8.8, lineGap: 2 })) {
-          break;
-        }
+        drawWrapped(`• ${detail}`, {
+          x: margin + 7,
+          width: maxWidth - 7,
+          size: 8.8,
+          lineGap: RESUME_LAYOUT.lineGap.meta
+        });
       }
-      if (!gap(1.8)) break;
+      gap(1.8);
     }
   }
 
-  if (content.certifications.length && drawSectionTitle("CERTIFICATIONS")) {
-    drawWrapped(content.certifications.join(", "), { size: 9.1, lineGap: 2.1 });
+  if (content.certifications.length) {
+    drawSectionTitle("CERTIFICATIONS");
+    drawWrapped(content.certifications.join(", "), { size: 9, lineGap: RESUME_LAYOUT.lineGap.tight });
   }
 
   return Buffer.from(await pdfDoc.save());
