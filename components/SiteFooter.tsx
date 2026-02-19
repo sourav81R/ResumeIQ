@@ -23,8 +23,8 @@ export default function SiteFooter() {
       <div className="container py-10">
         <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-5">
           <div className="space-y-4 xl:col-span-1">
-            <h3 className="font-display text-4xl font-bold italic tracking-tight text-cyan-800">ResumeIQ</h3>
-            <p className="max-w-xs text-base leading-7 text-slate-600">
+            <h3 className="font-display text-3xl font-bold italic tracking-tight text-cyan-800">ResumeIQ</h3>
+            <p className="max-w-xs text-sm leading-6 text-slate-600">
               Build ATS-ready resumes faster with role-aware insights and focused edits.
             </p>
             <div className="flex items-center gap-3">
@@ -57,8 +57,8 @@ export default function SiteFooter() {
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-display text-2xl font-semibold text-slate-900">Quick Links</h4>
-            <ul className="space-y-2.5 text-lg">
+            <h4 className="font-display text-xl font-semibold text-slate-900">Quick Links</h4>
+            <ul className="space-y-2 text-base">
               {quickLinks.map((item) => (
                 <li key={item.label}>
                   <Link href={item.href} className="transition hover:text-cyan-700">
@@ -70,8 +70,8 @@ export default function SiteFooter() {
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-display text-2xl font-semibold text-slate-900">Product</h4>
-            <ul className="space-y-2.5 text-lg">
+            <h4 className="font-display text-xl font-semibold text-slate-900">Product</h4>
+            <ul className="space-y-2 text-base">
               {productLinks.map((item) => (
                 <li key={item.label}>
                   <Link href={item.href} className="transition hover:text-cyan-700">
@@ -83,8 +83,8 @@ export default function SiteFooter() {
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-display text-2xl font-semibold text-slate-900">Contact Us</h4>
-            <ul className="space-y-3 text-lg">
+            <h4 className="font-display text-xl font-semibold text-slate-900">Contact Us</h4>
+            <ul className="space-y-2.5 text-base">
               <li className="flex items-center gap-3">
                 <MapPin className="h-5 w-5 text-cyan-700" />
                 <span>Remote-first, India</span>
@@ -105,15 +105,15 @@ export default function SiteFooter() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="font-display text-2xl font-semibold text-slate-900">Get Started</h4>
+            <h4 className="font-display text-xl font-semibold text-slate-900">Get Started</h4>
             <div className="space-y-3">
               <Link
                 href="/upload"
                 className="flex items-center justify-between rounded-xl border border-cyan-200 bg-white/80 px-3 py-2 transition hover:border-cyan-400 hover:bg-white"
               >
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-cyan-700">Start Here</p>
-                  <p className="text-xl font-bold leading-none text-slate-900">Upload Resume</p>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-cyan-700">Start Here</p>
+                  <p className="text-lg font-bold leading-none text-slate-900">Upload Resume</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-cyan-700" />
               </Link>
@@ -122,8 +122,8 @@ export default function SiteFooter() {
                 className="flex items-center justify-between rounded-xl border border-teal-200 bg-white/80 px-3 py-2 transition hover:border-teal-400 hover:bg-white"
               >
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-teal-700">Track Progress</p>
-                  <p className="text-xl font-bold leading-none text-slate-900">View Dashboard</p>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.08em] text-teal-700">Track Progress</p>
+                  <p className="text-lg font-bold leading-none text-slate-900">View Dashboard</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-teal-700" />
               </Link>
@@ -131,10 +131,11 @@ export default function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-9 border-t border-cyan-200/70 pt-6 text-center text-xl text-slate-500">
-          © {new Date().getFullYear()} ResumeIQ. All rights reserved.
+        <div className="mt-9 border-t border-cyan-200/70 pt-6 text-center text-base text-slate-500">
+          (c) {new Date().getFullYear()} ResumeIQ. All rights reserved.
         </div>
       </div>
     </footer>
   );
 }
+
