@@ -7,6 +7,9 @@ import { getOptimizedResumeById } from "@/lib/optimized-resume-store";
 import { RESUME_LAYOUT, resumeContentWidth } from "@/lib/resume-layout";
 import { getTemplateById } from "@/lib/resume-templates";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 type Params = {
   params: {
     id: string;
@@ -186,6 +189,7 @@ function canFitOnSinglePage(
       y -= lineHeight;
     }
   };
+
 
   const drawLeftRight = (left: string, right: string, size: number, isBold = false) => {
     if (overflow) return;
@@ -491,6 +495,53 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
     }
   };
 
+  const drawBulletLine = (
+    text: string,
+    options?: {
+      x?: number;
+      width?: number;
+      size?: number;
+      color?: ReturnType<typeof rgb>;
+      lineGap?: number;
+    }
+  ) => {
+    if (overflowed || !text.trim()) return;
+
+    const size = (options?.size ?? RESUME_LAYOUT.font.bodyTight) * scale;
+    const lineGap = (options?.lineGap ?? RESUME_LAYOUT.lineGap.tight) * scale;
+    const color = options?.color ?? textColor;
+    const x = options?.x ?? margin;
+    const width = options?.width ?? maxWidth;
+    const bulletGap = 7 * scale;
+    const bulletSize = Math.max(0.9, 1.25 * scale);
+    const textX = x + bulletGap;
+    const textWidth = Math.max(48, width - bulletGap);
+    const lines = wrapText(text, textWidth, font, size);
+    const lineHeight = size + lineGap;
+
+    for (let index = 0; index < lines.length; index += 1) {
+      if (!ensureSpace(lineHeight)) return;
+
+      if (index === 0) {
+        page.drawCircle({
+          x: x + bulletSize,
+          y: y - size * 0.42,
+          size: bulletSize,
+          color
+        });
+      }
+
+      page.drawText(lines[index] || "", {
+        x: textX,
+        y: y - size,
+        size,
+        font,
+        color
+      });
+      y -= lineHeight;
+    }
+  };
+
   const drawLeftRight = (left: string, right: string, size: number, isBold = false) => {
     if (overflowed) return;
 
@@ -753,13 +804,17 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
   if (content.certifications.length) {
     drawSectionTitle("CERTIFICATIONS");
     for (const certification of content.certifications) {
-      drawWrapped(`- ${certification}`, {
+      drawBulletLine(certification, {
         x: margin + 7 * scale,
         width: maxWidth - 7 * scale,
         size: 9,
         lineGap: RESUME_LAYOUT.lineGap.tight
       });
     }
+  }
+
+  while (pdfDoc.getPageCount() > 1) {
+    pdfDoc.removePage(pdfDoc.getPageCount() - 1);
   }
 
   return Buffer.from(await pdfDoc.save());
@@ -783,7 +838,10 @@ export async function GET(request: NextRequest, { params }: Params) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename=\"ResumeIQ-Optimized-${params.id}.pdf\"`
+        "Content-Disposition": `attachment; filename=\"ResumeIQ-Optimized-${params.id}.pdf\"`,
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        Pragma: "no-cache",
+        Expires: "0"
       }
     });
   } catch (error) {

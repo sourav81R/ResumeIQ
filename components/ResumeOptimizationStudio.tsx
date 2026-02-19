@@ -541,7 +541,7 @@ export default function ResumeOptimizationStudio({
         versionId = savedId;
       }
 
-      window.open(`/api/optimized/${versionId}/download`, "_blank", "noopener,noreferrer");
+      window.open(`/api/optimized/${versionId}/download?ts=${Date.now()}`, "_blank", "noopener,noreferrer");
       setStatus("PDF download started.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to download PDF.");
