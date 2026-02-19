@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 
 import { AuthProvider } from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
+import SiteFooter from "@/components/SiteFooter";
 
 import "@/app/globals.css";
 
@@ -18,10 +19,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${jakarta.variable} ${sora.variable} font-sans`}>
+      <body className={`${jakarta.variable} ${sora.variable} flex min-h-screen flex-col font-sans`}>
         <AuthProvider>
           <Navbar />
-          <main>{children}</main>
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
         </AuthProvider>
       </body>
     </html>
