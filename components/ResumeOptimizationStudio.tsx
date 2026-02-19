@@ -819,7 +819,11 @@ export default function ResumeOptimizationStudio({
                     unoptimized
                     className="h-16 w-16 rounded-lg border border-slate-300 object-cover"
                   />
-                ) : null}
+                ) : (
+                  <div className="flex h-16 w-16 items-center justify-center rounded-lg border border-slate-300 bg-white text-slate-500">
+                    <UserRound className="h-7 w-7" />
+                  </div>
+                )}
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Input type="file" accept="image/png,image/jpeg,image/webp" onChange={handlePhotoUpload} />
