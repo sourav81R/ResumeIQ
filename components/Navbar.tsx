@@ -29,17 +29,20 @@ export default function Navbar() {
   const userInitial = greetingName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/90 backdrop-blur">
-      <div className="container flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight text-slate-900">
+    <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-slate-50/75 backdrop-blur-xl">
+      <div className="container flex h-16 items-center justify-between gap-2 sm:h-20">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/85 px-3 py-1.5 text-base font-semibold tracking-tight text-slate-900 shadow-sm sm:text-lg"
+        >
           <Sparkles className="h-5 w-5 text-cyan-600" />
-          ResumeIQ
+          <span className="font-display">ResumeIQ</span>
         </Link>
 
-        <nav className="hidden items-center gap-2 md:flex">
+        <nav className="hidden items-center gap-2 lg:flex">
           {isLoggedIn ? (
-            <div className="mr-2 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">
-              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white">
+            <div className="mr-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm">
+              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-xs font-bold text-white">
                 {userInitial}
               </span>
               <span className="text-sm font-medium text-slate-700">Hello, {greetingName}</span>
@@ -51,10 +54,10 @@ export default function Navbar() {
               key={item.href}
               href={getNavHref(item.href)}
               className={cn(
-                "rounded-md px-3 py-2 text-sm font-medium transition",
+                "rounded-full px-3 py-2 text-sm font-medium transition",
                 pathname === item.href
-                  ? "bg-cyan-100 text-cyan-700"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                  ? "bg-cyan-100 text-cyan-800 shadow-sm"
+                  : "text-slate-600 hover:bg-white hover:text-slate-900"
               )}
             >
               {item.label}
@@ -71,6 +74,7 @@ export default function Navbar() {
             <Button
               size="sm"
               variant="outline"
+              className="rounded-full bg-white"
               onClick={async () => {
                 await signOutUser();
                 router.push("/");
@@ -83,9 +87,9 @@ export default function Navbar() {
         </nav>
 
         <Button
-          variant="ghost"
+          variant="outline"
           size="icon"
-          className="md:hidden"
+          className="rounded-full bg-white lg:hidden"
           onClick={() => setOpen((state) => !state)}
           aria-label="Toggle menu"
         >
@@ -94,11 +98,11 @@ export default function Navbar() {
       </div>
 
       {open ? (
-        <div className="overflow-hidden border-t border-slate-200 bg-white md:hidden">
+        <div className="overflow-hidden border-t border-slate-200 bg-white/95 backdrop-blur lg:hidden">
           <div className="container flex flex-col gap-2 py-4">
             {isLoggedIn ? (
               <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-cyan-600 text-xs font-bold text-white">
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-xs font-bold text-white">
                   {userInitial}
                 </span>
                 Hello, {greetingName}
@@ -109,7 +113,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={getNavHref(item.href)}
-                className="rounded-md px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
+                className="rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-200 hover:bg-slate-100"
                 onClick={() => setOpen(false)}
               >
                 {item.label}

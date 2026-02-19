@@ -23,7 +23,7 @@ export default function ATSBreakdown(props: ATSBreakdownProps) {
         const value = props[item.key];
 
         return (
-          <div key={item.key} className="space-y-2">
+          <div key={item.key} className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
             <div className="flex items-center justify-between text-sm">
               <p className="font-medium text-slate-700">{item.label}</p>
               <p className="text-slate-500">

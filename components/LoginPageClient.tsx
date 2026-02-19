@@ -101,18 +101,23 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
   }, [loading, redirectPath, router, sessionReady, user]);
 
   return (
-    <div className="container flex min-h-[calc(100vh-4rem)] items-center justify-center py-6">
-      <Card className="w-full max-w-lg rounded-2xl border-slate-200 bg-white/95 shadow-xl">
+    <div className="container relative flex min-h-[calc(100vh-4rem)] items-center justify-center py-6 sm:py-10">
+      <div className="pointer-events-none absolute left-0 top-10 h-40 w-40 rounded-full bg-cyan-200/50 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-24 h-40 w-40 rounded-full bg-teal-200/45 blur-3xl" />
+
+      <Card className="w-full max-w-md border-slate-200/80 bg-white/95 shadow-[0_22px_45px_rgba(2,34,71,0.14)] sm:max-w-lg">
         <CardHeader className="space-y-1 pb-1 text-center">
-          <p className="text-sm font-semibold uppercase tracking-[0.25em] text-teal-700">Welcome Back</p>
-          <CardTitle className="text-4xl font-extrabold tracking-tight text-slate-900">Login</CardTitle>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700 sm:text-sm">Welcome Back</p>
+          <CardTitle className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Login
+          </CardTitle>
           <CardDescription className="sr-only">Login to access your ResumeIQ dashboard.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 px-6 pb-6 sm:px-8">
+        <CardContent className="space-y-4 px-4 pb-5 sm:px-8 sm:pb-7">
           {loading ? <LoadingSpinner label="Checking authentication..." /> : null}
 
           <div className="space-y-2">
-            <Label htmlFor="email" className="text-lg font-medium text-slate-700 sm:text-xl">
+            <Label htmlFor="email" className="text-base font-medium text-slate-700 sm:text-lg">
               Email
             </Label>
             <Input
@@ -121,12 +126,12 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
               placeholder="Enter email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="h-12 rounded-xl border-slate-300 text-base"
+              className="h-11 rounded-xl border-slate-300 text-sm sm:h-12 sm:text-base"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-lg font-medium text-slate-700 sm:text-xl">
+            <Label htmlFor="password" className="text-base font-medium text-slate-700 sm:text-lg">
               Password
             </Label>
             <div className="relative">
@@ -136,7 +141,7 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
                 placeholder="Enter password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="h-12 rounded-xl border-slate-300 pr-12 text-base"
+                className="h-11 rounded-xl border-slate-300 pr-12 text-sm sm:h-12 sm:text-base"
               />
               <button
                 type="button"
@@ -151,7 +156,7 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
 
           <Button
             type="button"
-            className="h-12 w-full rounded-xl bg-teal-600 text-lg font-semibold hover:bg-teal-700"
+            className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-teal-500 text-base font-semibold hover:from-cyan-700 hover:to-teal-600 sm:h-12 sm:text-lg"
             disabled={busy || loading}
             onClick={async () => {
               const validationError = validateCredentials();
@@ -187,7 +192,7 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
             disabled={busy || loading}
             variant="outline"
             type="button"
-            className="h-12 w-full rounded-xl border-slate-300 text-lg font-semibold text-slate-700 hover:bg-slate-50"
+            className="h-11 w-full rounded-xl border-slate-300 bg-white text-base font-semibold text-slate-700 hover:bg-slate-50 sm:h-12 sm:text-lg"
             onClick={async () => {
               setBusy(true);
               setError("");
@@ -225,7 +230,7 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
             {busy ? "Signing in..." : "Continue with Google"}
           </Button>
 
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-center text-xs text-slate-600 sm:text-sm">
             Don&apos;t have an account?{" "}
             <button
               type="button"

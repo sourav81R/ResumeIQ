@@ -19,60 +19,69 @@ export default async function DashboardPage() {
   const averageScore = resumes.length
     ? Math.round(resumes.reduce((sum, resume) => sum + resume.atsScore, 0) / resumes.length)
     : 0;
+  const latestUpload = resumes[0]?.fileName || "No uploads yet";
 
   return (
-    <div className="container py-8 md:py-10">
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Your Resume Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-600 sm:text-base">
-            Track ATS score trends and review optimization insights.
-          </p>
+    <div className="container py-6 sm:py-8 md:py-10">
+      <div className="mb-6 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-[0_18px_38px_rgba(2,35,71,0.1)] backdrop-blur sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">Your Resume Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-600 sm:text-base">
+              Track ATS score trends and review optimization insights.
+            </p>
+          </div>
+          <Button asChild className="h-11 rounded-xl sm:h-12">
+            <Link href="/upload">
+              <UploadCloud className="mr-2 h-4 w-4" />
+              New Analysis
+            </Link>
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/upload">
-            <UploadCloud className="mr-2 h-4 w-4" />
-            New Analysis
-          </Link>
-        </Button>
       </div>
 
       <section className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="border-cyan-100 bg-gradient-to-b from-cyan-50/80 to-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Total Resumes</CardTitle>
+            <CardTitle className="text-sm font-medium text-cyan-900">Total Resumes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-slate-900">{resumes.length}</p>
+            <p className="text-3xl font-bold text-cyan-900">{resumes.length}</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-teal-100 bg-gradient-to-b from-teal-50/80 to-white">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Average ATS Score</CardTitle>
+            <CardTitle className="text-sm font-medium text-teal-900">Average ATS Score</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-slate-900">{averageScore}</p>
+            <p className="text-3xl font-bold text-teal-900">{averageScore}</p>
           </CardContent>
         </Card>
 
-        <Card className="sm:col-span-2 lg:col-span-1">
+        <Card className="border-sky-100 bg-gradient-to-b from-sky-50/80 to-white sm:col-span-2 lg:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-slate-600">Latest Upload</CardTitle>
+            <CardTitle className="text-sm font-medium text-sky-900">Latest Upload</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="line-clamp-1 text-sm font-medium text-slate-800">{resumes[0]?.fileName || "No uploads yet"}</p>
+            <p className="line-clamp-1 text-sm font-medium text-slate-800">{latestUpload}</p>
           </CardContent>
         </Card>
       </section>
 
+      <div className="mb-5 flex items-center justify-between">
+        <h2 className="font-display text-lg font-semibold text-slate-900 sm:text-xl">Recent Reports</h2>
+      </div>
+
       {resumes.length === 0 ? (
         <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+          <CardContent className="flex flex-col items-center justify-center py-10 text-center sm:py-12">
             <FileSearch className="mb-3 h-9 w-9 text-slate-400" />
             <p className="text-lg font-semibold text-slate-900">No resume reports yet</p>
-            <p className="mt-1 text-sm text-slate-600">Upload your first resume to get ATS scoring and AI suggestions.</p>
-            <Button asChild className="mt-4">
+            <p className="mt-1 text-sm text-slate-600">
+              Upload your first resume to get ATS scoring and AI suggestions.
+            </p>
+            <Button asChild className="mt-4 rounded-xl">
               <Link href="/upload">Upload Resume</Link>
             </Button>
           </CardContent>

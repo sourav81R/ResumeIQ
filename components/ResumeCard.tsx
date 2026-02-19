@@ -20,17 +20,19 @@ function scoreVariant(score: number): "success" | "warning" | "danger" {
 export default function ResumeCard({ resume }: ResumeCardProps) {
   return (
     <div>
-      <Card className="h-full border-slate-200 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-        <CardHeader className="space-y-3">
+      <Card className="h-full border-slate-200/90 bg-white/95 shadow-[0_12px_26px_rgba(2,32,71,0.09)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(2,32,71,0.13)]">
+        <CardHeader className="space-y-3 pb-4">
           <div className="flex items-center justify-between gap-3">
-            <CardTitle className="line-clamp-1 text-base text-slate-900">{resume.jobRole}</CardTitle>
-            <Badge variant={scoreVariant(resume.atsScore)}>{resume.atsScore}/100</Badge>
+            <CardTitle className="line-clamp-1 font-display text-base text-slate-900">{resume.jobRole}</CardTitle>
+            <Badge variant={scoreVariant(resume.atsScore)} className="px-3 py-1 font-semibold">
+              {resume.atsScore}/100
+            </Badge>
           </div>
           <p className="line-clamp-1 text-sm text-slate-500">{resume.fileName}</p>
         </CardHeader>
 
         <CardContent className="space-y-2 text-sm text-slate-600">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1.5">
             <CalendarDays className="h-4 w-4" />
             {format(new Date(resume.createdAt), "MMM dd, yyyy")}
           </div>
@@ -38,8 +40,8 @@ export default function ResumeCard({ resume }: ResumeCardProps) {
           <p>Skill Match: {resume.skillMatch}%</p>
         </CardContent>
 
-        <CardFooter>
-          <Button asChild variant="outline" className="w-full">
+        <CardFooter className="pt-1">
+          <Button asChild variant="outline" className="h-11 w-full rounded-xl bg-white">
             <Link href={`/report/${resume.id}`}>
               View Report
               <ChevronRight className="ml-1 h-4 w-4" />

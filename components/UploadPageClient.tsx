@@ -27,20 +27,29 @@ export default function UploadPageClient() {
   const [error, setError] = useState("");
 
   return (
-    <div className="container py-8 md:py-12">
-      <div className="mx-auto w-full max-w-2xl">
-        <Card className="border-slate-200 shadow-lg">
+    <div className="container py-6 sm:py-8 md:py-12">
+      <div className="mb-5">
+        <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">Upload Resume</h1>
+        <p className="mt-1 text-sm text-slate-600 sm:text-base">
+          Upload your file and get role-specific ATS insights in one flow.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+        <Card className="border-slate-200/80 shadow-[0_14px_34px_rgba(2,32,71,0.1)]">
           <CardHeader>
-            <CardTitle className="text-2xl">Upload Resume</CardTitle>
+            <CardTitle className="font-display text-xl sm:text-2xl">Upload Resume</CardTitle>
             <CardDescription>
               Upload a PDF or DOCX file and select the target job role to generate ATS analysis.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-5 sm:space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="jobRole">Target Job Role</Label>
+              <Label htmlFor="jobRole" className="text-sm font-semibold text-slate-700">
+                Target Job Role
+              </Label>
               <Select value={jobRole} onValueChange={setJobRole}>
-                <SelectTrigger id="jobRole">
+                <SelectTrigger id="jobRole" className="h-11 sm:h-12">
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -54,12 +63,14 @@ export default function UploadPageClient() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="resume">Resume File</Label>
+              <Label htmlFor="resume" className="text-sm font-semibold text-slate-700">
+                Resume File
+              </Label>
               <input
                 id="resume"
                 type="file"
                 accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                className="block w-full rounded-md border border-slate-200 bg-white p-2 text-sm"
+                className="block w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-cyan-50 file:px-3 file:py-1.5 file:font-medium file:text-cyan-700 hover:file:bg-cyan-100"
                 onChange={(event) => {
                   const selected = event.target.files?.[0];
                   setFile(selected || null);
@@ -70,7 +81,7 @@ export default function UploadPageClient() {
 
             <Button
               disabled={loading}
-              className="w-full"
+              className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-teal-500 text-base font-semibold hover:from-cyan-700 hover:to-teal-600 sm:h-12"
               onClick={async () => {
                 setError("");
 
@@ -134,6 +145,21 @@ export default function UploadPageClient() {
 
             {loading ? <LoadingSpinner label={status} /> : null}
             {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+          </CardContent>
+        </Card>
+
+        <Card className="h-fit border-slate-200/80 bg-white/90">
+          <CardHeader className="pb-3">
+            <CardTitle className="font-display text-lg">Quick Tips</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm text-slate-600">
+            <p className="rounded-xl bg-cyan-50 p-3">
+              Use a recent resume version tailored to the role you are applying for.
+            </p>
+            <p className="rounded-xl bg-teal-50 p-3">Keep file size below 5MB for faster analysis.</p>
+            <p className="rounded-xl bg-sky-50 p-3">
+              Include measurable achievements to improve ATS and recruiter relevance.
+            </p>
           </CardContent>
         </Card>
       </div>

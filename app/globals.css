@@ -3,26 +3,26 @@
 @tailwind utilities;
 
 :root {
-  --background: 210 33% 99%;
-  --foreground: 220 30% 14%;
+  --background: 196 38% 98%;
+  --foreground: 220 28% 14%;
   --card: 0 0% 100%;
-  --card-foreground: 220 30% 14%;
+  --card-foreground: 220 28% 14%;
   --popover: 0 0% 100%;
-  --popover-foreground: 220 30% 14%;
-  --primary: 191 96% 36%;
+  --popover-foreground: 220 28% 14%;
+  --primary: 186 90% 32%;
   --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222 47% 11%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215 16% 46%;
-  --accent: 190 90% 94%;
-  --accent-foreground: 192 80% 22%;
+  --secondary: 198 44% 95%;
+  --secondary-foreground: 222 35% 15%;
+  --muted: 198 35% 95%;
+  --muted-foreground: 214 14% 40%;
+  --accent: 185 75% 93%;
+  --accent-foreground: 186 74% 22%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 214 30% 90%;
-  --input: 214 30% 90%;
-  --ring: 191 96% 36%;
-  --radius: 0.8rem;
+  --border: 201 28% 86%;
+  --input: 201 28% 86%;
+  --ring: 186 90% 32%;
+  --radius: 1rem;
 }
 
 * {
@@ -31,9 +31,53 @@
 
 body {
   @apply bg-background text-foreground antialiased;
+  min-height: 100vh;
   background-image:
-    radial-gradient(circle at 20% 20%, rgba(6, 182, 212, 0.08), transparent 38%),
-    radial-gradient(circle at 80% 0%, rgba(14, 165, 233, 0.08), transparent 35%);
+    radial-gradient(circle at 12% 15%, rgba(3, 105, 161, 0.12), transparent 36%),
+    radial-gradient(circle at 86% 4%, rgba(20, 184, 166, 0.15), transparent 34%),
+    radial-gradient(circle at 45% 82%, rgba(14, 116, 144, 0.08), transparent 28%),
+    linear-gradient(180deg, #f7fbfc 0%, #eef5f8 100%);
+}
+
+main {
+  position: relative;
+}
+
+main::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(15, 23, 42, 0.04) 0.6px, transparent 0.6px);
+  background-size: 24px 24px;
+  opacity: 0.4;
+  z-index: -1;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgba(6, 182, 212, 0.24);
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.float-soft {
+  animation: float-soft 6s ease-in-out infinite;
 }
 
 
