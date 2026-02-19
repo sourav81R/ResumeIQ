@@ -215,9 +215,13 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
       {compact.certifications.length ? (
         <section className="mt-3">
           <SectionTitle title="CERTIFICATIONS" color={sectionTitleColor} />
-          <p className="text-slate-800" style={{ fontSize: `${RESUME_LAYOUT.font.bodyTight}px` }}>
-            {compact.certifications.join(", ")}
-          </p>
+          <ul className="list-disc pl-5 text-slate-800" style={{ fontSize: `${RESUME_LAYOUT.font.bodyTight}px` }}>
+            {compact.certifications.map((certification, certificationIndex) => (
+              <li key={`${certification}-${certificationIndex}`} className="mt-0.5">
+                {certification}
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
     </div>

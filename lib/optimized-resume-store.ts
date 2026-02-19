@@ -215,3 +215,38 @@ export async function updateOptimizedResumeVersion(
 
   await getAdminDb().collection(COLLECTION).doc(id).set(payload, { merge: true });
 }
+
+export async function deleteOptimizedResumesForResume(resumeId: string, userId: string) {
+  const db = getAdminDb();
+  const snapshot = await db
+    .collection(COLLECTION)
+    .where("resumeId", "==", resumeId)
+    .where("userId", "==", userId)
+    .get();
+
+  if (snapshot.empty) {
+    return 0;
+  }
+
+  let deletedCount = 0;
+  let batch = db.batch();
+  let ops = 0;
+
+  for (const doc of snapshot.docs) {
+    batch.delete(doc.ref);
+    deletedCount += 1;
+    ops += 1;
+
+    if (ops >= 400) {
+      await batch.commit();
+      batch = db.batch();
+      ops = 0;
+    }
+  }
+
+  if (ops > 0) {
+    await batch.commit();
+  }
+
+  return deletedCount;
+}
