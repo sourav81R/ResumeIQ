@@ -14,6 +14,38 @@ export const EMPTY_FEEDBACK: ResumeFeedback = {
   }
 };
 
+function normalizeFeedback(rawFeedback: unknown): ResumeFeedback {
+  if (!rawFeedback || typeof rawFeedback !== "object") {
+    return EMPTY_FEEDBACK;
+  }
+
+  const feedback = rawFeedback as Record<string, unknown>;
+  const sectionFeedback =
+    feedback.sectionFeedback && typeof feedback.sectionFeedback === "object"
+      ? (feedback.sectionFeedback as Record<string, unknown>)
+      : {};
+
+  const normalizeList = (value: unknown) =>
+    Array.isArray(value)
+      ? value
+          .map((item) => (typeof item === "string" ? item.trim() : ""))
+          .filter((item) => item.length > 0)
+      : [];
+
+  return {
+    missingSkills: normalizeList(feedback.missingSkills),
+    matchedKeywords: normalizeList(feedback.matchedKeywords),
+    suggestions: normalizeList(feedback.suggestions),
+    sectionFeedback: {
+      summary: typeof sectionFeedback.summary === "string" ? sectionFeedback.summary : "",
+      experience: typeof sectionFeedback.experience === "string" ? sectionFeedback.experience : "",
+      skills: typeof sectionFeedback.skills === "string" ? sectionFeedback.skills : "",
+      education: typeof sectionFeedback.education === "string" ? sectionFeedback.education : "",
+      formatting: typeof sectionFeedback.formatting === "string" ? sectionFeedback.formatting : ""
+    }
+  };
+}
+
 export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRecord {
   return {
     id,
@@ -29,7 +61,7 @@ export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRe
     formattingScore: Number(raw.formattingScore || 0),
     experienceScore: Number(raw.experienceScore || 0),
     educationScore: Number(raw.educationScore || 0),
-    feedback: (raw.feedback as ResumeFeedback) || EMPTY_FEEDBACK,
+    feedback: normalizeFeedback(raw.feedback),
     createdAt: String(raw.createdAt || new Date().toISOString()),
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined
   };
