@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ResumeRecord } from "@/types";
+import { AnalysisSource, ResumeRecord } from "@/types";
 
 type ResumeCardProps = {
   resume: ResumeRecord;
@@ -15,6 +15,13 @@ function scoreVariant(score: number): "success" | "warning" | "danger" {
   if (score >= 80) return "success";
   if (score >= 60) return "warning";
   return "danger";
+}
+
+function analysisSourceLabel(source?: AnalysisSource) {
+  if (source === "gemini") return "Gemini";
+  if (source === "openai") return "OpenAI";
+  if (source === "heuristic") return "Heuristic";
+  return "Unknown";
 }
 
 export default function ResumeCard({ resume }: ResumeCardProps) {
@@ -36,6 +43,7 @@ export default function ResumeCard({ resume }: ResumeCardProps) {
             <CalendarDays className="h-4 w-4" />
             {format(new Date(resume.createdAt), "MMM dd, yyyy")}
           </div>
+          <p>Analysis Source: {analysisSourceLabel(resume.analysisSource)}</p>
           <p>Keyword Match: {resume.keywordMatch}%</p>
           <p>Skill Match: {resume.skillMatch}%</p>
         </CardContent>

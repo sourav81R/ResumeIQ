@@ -21,11 +21,14 @@ export type ScoreBreakdown = {
   educationScore: number;
 };
 
+export type AnalysisSource = "gemini" | "openai" | "heuristic" | "unknown";
+
 export type ResumeRecord = {
   id: string;
   userId: string;
   fileUrl: string;
   filePath: string;
+  fileType?: string;
   bucketName?: string;
   fileName: string;
   resumeText?: string;
@@ -36,6 +39,7 @@ export type ResumeRecord = {
   formattingScore: number;
   experienceScore: number;
   educationScore: number;
+  analysisSource?: AnalysisSource;
   feedback: ResumeFeedback;
   createdAt: string;
   updatedAt?: string;

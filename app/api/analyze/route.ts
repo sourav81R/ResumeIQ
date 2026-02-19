@@ -5,10 +5,18 @@ import { calculateATSScore } from "@/lib/atsScoring";
 import { requireApiUser } from "@/lib/auth-server";
 import { analyzeResumeWithAI } from "@/lib/openai";
 import { getAdminDb } from "@/lib/firebase-admin";
+import { calibrateBreakdownWithRole } from "@/lib/role-calibration";
 import { resolveResumeTextAndFormatting } from "@/lib/resume-source";
 import { analyzeSchema } from "@/lib/validations";
 
 export const runtime = "nodejs";
+
+function mergeUnique(first: string[], second: string[], max: number) {
+  return Array.from(new Set([...first, ...second].map((entry) => String(entry || "").trim()).filter(Boolean))).slice(
+    0,
+    max
+  );
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,6 +38,12 @@ export async function POST(request: NextRequest) {
     }
 
     const parsedResume = await resolveResumeTextAndFormatting(resumeData || {});
+    if (!parsedResume.text || parsedResume.text.trim().length < 80) {
+      return NextResponse.json(
+        { error: "Resume text extraction failed. Please upload a clearer PDF or DOCX resume." },
+        { status: 400 }
+      );
+    }
 
     const targetRole = jobRole || String(resumeData.jobRole || "General Role");
 
@@ -39,13 +53,13 @@ export async function POST(request: NextRequest) {
       formattingScore: parsedResume.formattingScore
     });
 
-    const scoreBreakdown = {
-      keywordMatch: aiResult.breakdown.keywordMatch,
-      skillMatch: aiResult.breakdown.skillMatch,
-      formattingScore: aiResult.breakdown.formattingScore,
-      experienceScore: aiResult.breakdown.experienceScore,
-      educationScore: aiResult.breakdown.educationScore
-    };
+    const calibrated = calibrateBreakdownWithRole({
+      resumeText: parsedResume.text,
+      jobRole: targetRole,
+      aiBreakdown: aiResult.breakdown,
+      baselineFormattingScore: parsedResume.formattingScore
+    });
+    const scoreBreakdown = calibrated.breakdown;
 
     const atsScore = calculateATSScore(scoreBreakdown);
 
@@ -58,9 +72,10 @@ export async function POST(request: NextRequest) {
       formattingScore: scoreBreakdown.formattingScore,
       experienceScore: scoreBreakdown.experienceScore,
       educationScore: scoreBreakdown.educationScore,
+      analysisSource: aiResult.source,
       feedback: {
-        missingSkills: aiResult.missingSkills,
-        matchedKeywords: aiResult.matchedKeywords,
+        missingSkills: mergeUnique(aiResult.missingSkills, calibrated.missingSkills, 20),
+        matchedKeywords: mergeUnique(aiResult.matchedKeywords, calibrated.matchedKeywords, 30),
         suggestions: aiResult.suggestions,
         sectionFeedback: aiResult.sectionFeedback
       },

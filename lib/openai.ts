@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 
 import { aiAnalysisSchema } from "@/lib/atsScoring";
+import { generateGeminiText } from "@/lib/gemini-client";
+import { AnalysisSource } from "@/types";
 
 let client: OpenAI | null = null;
 const ANALYSIS_PROMPT =
@@ -49,6 +51,30 @@ const STOPWORDS = new Set([
   "under",
   "through"
 ]);
+
+type Provider = "gemini" | "openai";
+type AnalysisOutput = ReturnType<typeof aiAnalysisSchema.parse> & { source: AnalysisSource };
+
+function getProviderOrder() {
+  const configured = String(process.env.AI_PROVIDER_ORDER || "gemini,openai")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+
+  const providers: Provider[] = [];
+
+  for (const entry of configured) {
+    if ((entry === "gemini" || entry === "openai") && !providers.includes(entry)) {
+      providers.push(entry);
+    }
+  }
+
+  if (!providers.length) {
+    return ["gemini", "openai"] as Provider[];
+  }
+
+  return providers;
+}
 
 function getOpenAIClient() {
   if (client) {
@@ -257,101 +283,42 @@ async function analyzeWithGemini(input: AnalyzeInput) {
     throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  const configuredModel = (process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
-  const tried: string[] = [];
-  let lastError = "";
+  const raw = await generateGeminiText({
+    apiKey,
+    configuredModel: process.env.GEMINI_MODEL,
+    prompt: `${ANALYSIS_PROMPT}\nTarget role: ${input.jobRole}\nBaseline formatting score: ${input.formattingScore}\nResume Text: ${input.resumeText}`,
+    responseMimeType: "application/json",
+    temperature: 0.2
+  });
 
-  const modelCandidates = Array.from(
-    new Set([
-      configuredModel.replace(/^models\//, ""),
-      configuredModel,
-      "gemini-2.5-flash",
-      "gemini-2.5-flash-latest",
-      "gemini-2.0-flash",
-      "gemini-1.5-flash-latest"
-    ])
-  );
-
-  const apiVersions = ["v1beta", "v1"];
-
-  for (const apiVersion of apiVersions) {
-    for (const candidate of modelCandidates) {
-      const normalizedModel = candidate.replace(/^models\//, "");
-      const endpoint = `https://generativelanguage.googleapis.com/${apiVersion}/models/${encodeURIComponent(normalizedModel)}:generateContent?key=${apiKey}`;
-      tried.push(`${apiVersion}:${normalizedModel}`);
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          generationConfig: {
-            temperature: 0.2,
-            responseMimeType: "application/json"
-          },
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `${ANALYSIS_PROMPT}\nTarget role: ${input.jobRole}\nBaseline formatting score: ${input.formattingScore}\nResume Text: ${input.resumeText}`
-                }
-              ]
-            }
-          ]
-        })
-      });
-
-      if (!response.ok) {
-        lastError = await response.text();
-        if (response.status === 404) {
-          continue;
-        }
-        throw new Error(`Gemini API error: ${response.status} ${lastError}`);
-      }
-
-      const data = (await response.json()) as {
-        candidates?: Array<{
-          content?: {
-            parts?: Array<{ text?: string }>;
-          };
-        }>;
-      };
-
-      const raw = data.candidates?.[0]?.content?.parts
-        ?.map((part) => part.text || "")
-        .join("")
-        .trim();
-
-      if (!raw) {
-        throw new Error("Gemini returned empty analysis response.");
-      }
-
-      return JSON.parse(extractJsonPayload(raw));
-    }
-  }
-
-  throw new Error(
-    `Gemini model unavailable. Tried: ${tried.join(", ")}. Last error: ${lastError || "NOT_FOUND"}`
-  );
+  return JSON.parse(extractJsonPayload(raw));
 }
 
 export async function analyzeResumeWithAI(input: AnalyzeInput) {
   const errors: string[] = [];
   let parsed: ParsedAnalysis | null = null;
+  let source: AnalysisSource = "unknown";
 
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      parsed = (await analyzeWithGemini(input)) as ParsedAnalysis;
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : "Gemini failed");
+  for (const provider of getProviderOrder()) {
+    if (parsed) break;
+
+    if (provider === "gemini" && process.env.GEMINI_API_KEY) {
+      try {
+        parsed = (await analyzeWithGemini(input)) as ParsedAnalysis;
+        source = "gemini";
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : "Gemini failed");
+      }
+      continue;
     }
-  }
 
-  if (!parsed && process.env.OPENAI_API_KEY) {
-    try {
-      parsed = (await analyzeWithOpenAI(input)) as ParsedAnalysis;
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : "OpenAI failed");
+    if (provider === "openai" && process.env.OPENAI_API_KEY) {
+      try {
+        parsed = (await analyzeWithOpenAI(input)) as ParsedAnalysis;
+        source = "openai";
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : "OpenAI failed");
+      }
     }
   }
 
@@ -360,6 +327,7 @@ export async function analyzeResumeWithAI(input: AnalyzeInput) {
       console.warn("AI analysis fallback activated:", errors.join(" | "));
     }
     parsed = analyzeWithHeuristics(input);
+    source = "heuristic";
   }
 
   const normalized = normalizeAnalysisPayload(parsed, input);
@@ -372,7 +340,13 @@ export async function analyzeResumeWithAI(input: AnalyzeInput) {
     normalized.breakdown.formattingScore = input.formattingScore;
   }
 
-  return aiAnalysisSchema.parse(normalized);
+  const validated = aiAnalysisSchema.parse(normalized);
+  const result: AnalysisOutput = {
+    ...validated,
+    source
+  };
+
+  return result;
 }
 
 

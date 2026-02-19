@@ -52,6 +52,7 @@ export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRe
     userId: String(raw.userId || ""),
     fileUrl: String(raw.fileUrl || ""),
     filePath: String(raw.filePath || ""),
+    fileType: raw.fileType ? String(raw.fileType) : undefined,
     bucketName: raw.bucketName ? String(raw.bucketName) : undefined,
     fileName: String(raw.fileName || "resume"),
     resumeText: typeof raw.resumeText === "string" ? raw.resumeText : undefined,
@@ -62,6 +63,13 @@ export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRe
     formattingScore: Number(raw.formattingScore || 0),
     experienceScore: Number(raw.experienceScore || 0),
     educationScore: Number(raw.educationScore || 0),
+    analysisSource:
+      raw.analysisSource === "gemini" ||
+      raw.analysisSource === "openai" ||
+      raw.analysisSource === "heuristic" ||
+      raw.analysisSource === "unknown"
+        ? raw.analysisSource
+        : "unknown",
     feedback: normalizeFeedback(raw.feedback),
     createdAt: String(raw.createdAt || new Date().toISOString()),
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined

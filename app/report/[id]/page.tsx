@@ -5,16 +5,25 @@ import { Download, MoveLeft } from "lucide-react";
 import ATSBreakdown from "@/components/ATSBreakdown";
 import ResumeOptimizationStudio from "@/components/ResumeOptimizationStudio";
 import ScoreChart from "@/components/ScoreChart";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getServerSessionUser } from "@/lib/auth-server";
 import { getResumeById } from "@/lib/resume-store";
+import { AnalysisSource } from "@/types";
 
 type PageProps = {
   params: {
     id: string;
   };
 };
+
+function analysisSourceLabel(source?: AnalysisSource) {
+  if (source === "gemini") return "Gemini";
+  if (source === "openai") return "OpenAI";
+  if (source === "heuristic") return "Heuristic";
+  return "Unknown";
+}
 
 export default async function ReportPage({ params }: PageProps) {
   const user = await getServerSessionUser();
@@ -53,7 +62,12 @@ export default async function ReportPage({ params }: PageProps) {
 
       <div className="mb-6 grid gap-4 xl:grid-cols-[260px_1fr]">
         <Card className="border-cyan-100 bg-gradient-to-b from-cyan-50/85 to-white">
-          <CardContent className="pt-6">
+          <CardContent className="space-y-3 pt-6">
+            <div className="flex items-center justify-center">
+              <Badge variant="default" className="bg-slate-800 text-white">
+                Analysis Source: {analysisSourceLabel(resume.analysisSource)}
+              </Badge>
+            </div>
             <ScoreChart score={resume.atsScore} />
           </CardContent>
         </Card>

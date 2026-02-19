@@ -1,7 +1,8 @@
 import pdfParse from "pdf-parse";
 import mammoth from "mammoth";
 
-const sectionRegex = /(summary|experience|education|skills|projects|certifications)/gi;
+const sectionRegex =
+  /\b(summary|professional summary|experience|work experience|education|skills|technical skills|projects|certifications)\b/gi;
 
 function clamp(value: number, min = 0, max = 100) {
   return Math.max(min, Math.min(max, value));
@@ -9,7 +10,7 @@ function clamp(value: number, min = 0, max = 100) {
 
 function inferFormattingScore(text: string) {
   const sectionMatches = text.match(sectionRegex)?.length ?? 0;
-  const bulletCount = (text.match(/[•\-*]\s+/g) || []).length;
+  const bulletCount = (text.match(/(?:\u2022|•|-|\*)\s+/g) || []).length;
   const lineCount = text.split(/\r?\n/).length;
 
   let score = 35;
@@ -19,6 +20,17 @@ function inferFormattingScore(text: string) {
   score += lineCount < 8 ? -20 : 0;
 
   return clamp(score);
+}
+
+function normalizeResumeText(text: string) {
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/\t/g, " ")
+    .split("\n")
+    .map((line) => line.replace(/\u00A0/g, " ").replace(/[ ]{2,}/g, " ").trim())
+    .filter(Boolean)
+    .join("\n")
+    .trim();
 }
 
 export async function parseResumeBuffer(input: {
@@ -41,10 +53,14 @@ export async function parseResumeBuffer(input: {
     throw new Error("Unsupported file format. Please upload PDF or DOCX.");
   }
 
-  const cleanedText = text.replace(/\s+/g, " ").trim();
+  const cleanedText = normalizeResumeText(text);
 
   if (!cleanedText) {
     throw new Error("Could not extract text from resume.");
+  }
+
+  if (cleanedText.length < 80) {
+    throw new Error("Extracted resume text is too short. Please upload a clearer PDF or DOCX.");
   }
 
   return {
@@ -52,5 +68,3 @@ export async function parseResumeBuffer(input: {
     formattingScore: inferFormattingScore(text)
   };
 }
-
-

@@ -4,6 +4,7 @@ import { parseResumeBuffer } from "@/lib/resumeParser";
 type ResumeDocData = {
   filePath?: unknown;
   fileName?: unknown;
+  fileType?: unknown;
   bucketName?: unknown;
   resumeText?: unknown;
   formattingScore?: unknown;
@@ -12,6 +13,7 @@ type ResumeDocData = {
 export async function resolveResumeTextAndFormatting(resumeData: ResumeDocData) {
   const filePath = String(resumeData.filePath || "");
   const fileName = String(resumeData.fileName || "resume.pdf");
+  const fileType = String(resumeData.fileType || "").toLowerCase();
   const resumeText = typeof resumeData.resumeText === "string" ? resumeData.resumeText : "";
   const hasStoredText = resumeText.trim().length > 0;
 
@@ -52,9 +54,13 @@ export async function resolveResumeTextAndFormatting(resumeData: ResumeDocData) 
 
   return parseResumeBuffer({
     fileName,
-    fileType: fileName.toLowerCase().endsWith(".docx")
-      ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-      : "application/pdf",
+    fileType:
+      fileType === "application/pdf" ||
+      fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ? fileType
+        : fileName.toLowerCase().endsWith(".docx")
+          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          : "application/pdf",
     buffer: fileBuffer
   });
 }

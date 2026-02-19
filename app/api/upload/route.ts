@@ -8,9 +8,28 @@ import { EMPTY_FEEDBACK } from "@/lib/resume-store";
 import { uploadSchema } from "@/lib/validations";
 
 export const runtime = "nodejs";
+const PDF_MIME = "application/pdf";
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 function sanitizeFileName(name: string) {
   return name.replace(/[^a-zA-Z0-9._-]/g, "-").toLowerCase();
+}
+
+function resolveResumeMimeType(fileName: string, fileType: string) {
+  const lowerName = fileName.toLowerCase();
+  const normalizedType = String(fileType || "").trim().toLowerCase();
+  const extensionType = lowerName.endsWith(".pdf") ? PDF_MIME : lowerName.endsWith(".docx") ? DOCX_MIME : "";
+  const mimeType = normalizedType === PDF_MIME || normalizedType === DOCX_MIME ? normalizedType : "";
+
+  if (!extensionType && !mimeType) {
+    throw new Error("Unsupported file format. Please upload PDF or DOCX.");
+  }
+
+  if (extensionType && mimeType && extensionType !== mimeType) {
+    throw new Error("File type mismatch. Please upload a valid PDF or DOCX file.");
+  }
+
+  return mimeType || extensionType;
 }
 
 function isMissingBucketError(error: unknown) {
@@ -39,6 +58,7 @@ export async function POST(request: NextRequest) {
       fileType: file.type,
       jobRole
     });
+    const resolvedMimeType = resolveResumeMimeType(file.name, file.type);
 
     const resumeId = randomUUID();
     const safeFileName = sanitizeFileName(file.name);
@@ -59,7 +79,7 @@ export async function POST(request: NextRequest) {
         const uploadedFile = bucket.file(filePath);
 
         await uploadedFile.save(buffer, {
-          contentType: file.type,
+          contentType: resolvedMimeType,
           metadata: {
             cacheControl: "private, max-age=0"
           }
@@ -86,7 +106,7 @@ export async function POST(request: NextRequest) {
       // Storage is unavailable (often Spark plan restriction). Fallback to Firestore-only mode.
       const parsed = await parseResumeBuffer({
         fileName: file.name,
-        fileType: file.type,
+        fileType: resolvedMimeType,
         buffer
       });
       resumeText = parsed.text;
@@ -102,6 +122,7 @@ export async function POST(request: NextRequest) {
       filePath,
       bucketName: bucketUsed,
       fileName: file.name,
+      fileType: resolvedMimeType,
       resumeText,
       jobRole,
       atsScore: 0,

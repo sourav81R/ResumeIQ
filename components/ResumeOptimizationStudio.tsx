@@ -2,7 +2,7 @@
 
 import NextImage from "next/image";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, RefreshCw, Sparkles, UserRound } from "lucide-react";
+import { Download, ExternalLink, Plus, RefreshCw, Sparkles, Trash2, UserRound } from "lucide-react";
 
 import OptimizedResumePreview from "@/components/OptimizedResumePreview";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -23,6 +23,29 @@ type ResumeOptimizationStudioProps = {
 type TemplateMode = ResumeTemplate["photoMode"];
 const MAX_PHOTO_FILE_BYTES = 4 * 1024 * 1024;
 const PHOTO_DIMENSION = 256;
+const MAX_EXPERIENCE_ITEMS = 6;
+const MAX_PROJECT_ITEMS = 6;
+
+function createEmptyExperience(): OptimizedResumeContent["experience"][number] {
+  return {
+    company: "",
+    role: "",
+    location: "",
+    startDate: "",
+    endDate: "",
+    bullets: []
+  };
+}
+
+function createEmptyProject(): OptimizedResumeContent["projects"][number] {
+  return {
+    name: "",
+    role: "",
+    tech: [],
+    link: "",
+    bullets: []
+  };
+}
 
 function toTextAreaValue(values: string[]) {
   return values.join("\n");
@@ -270,6 +293,48 @@ export default function ResumeOptimizationStudio({
       setStatus("");
       setError(err instanceof Error ? err.message : "Unable to add profile photo.");
     }
+  };
+
+  const handleAddExperience = () => {
+    if (!draftContent) return;
+    if (draftContent.experience.length >= MAX_EXPERIENCE_ITEMS) {
+      setError(`You can add up to ${MAX_EXPERIENCE_ITEMS} experience entries.`);
+      return;
+    }
+
+    setError("");
+    setDraftContent((current) =>
+      current ? { ...current, experience: [...current.experience, createEmptyExperience()] } : current
+    );
+  };
+
+  const handleRemoveExperience = (index: number) => {
+    setDraftContent((current) => {
+      if (!current) return current;
+      const experience = current.experience.filter((_, entryIndex) => entryIndex !== index);
+      return { ...current, experience };
+    });
+  };
+
+  const handleAddProject = () => {
+    if (!draftContent) return;
+    if (draftContent.projects.length >= MAX_PROJECT_ITEMS) {
+      setError(`You can add up to ${MAX_PROJECT_ITEMS} project entries.`);
+      return;
+    }
+
+    setError("");
+    setDraftContent((current) =>
+      current ? { ...current, projects: [...current.projects, createEmptyProject()] } : current
+    );
+  };
+
+  const handleRemoveProject = (index: number) => {
+    setDraftContent((current) => {
+      if (!current) return current;
+      const projects = current.projects.filter((_, entryIndex) => entryIndex !== index);
+      return { ...current, projects };
+    });
   };
 
   const handleGenerate = async () => {

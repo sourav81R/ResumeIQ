@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { z } from "zod";
 
 import { calculateATSScore } from "@/lib/atsScoring";
+import { generateGeminiText } from "@/lib/gemini-client";
 import { ResumeTemplate } from "@/types";
 
 const emptyExperienceItem = {
@@ -139,7 +140,30 @@ type OptimizerInput = {
   template: ResumeTemplate;
 };
 
+type Provider = "gemini" | "openai";
+
 let client: OpenAI | null = null;
+
+function getProviderOrder() {
+  const configured = String(process.env.AI_PROVIDER_ORDER || "gemini,openai")
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter(Boolean);
+
+  const providers: Provider[] = [];
+
+  for (const entry of configured) {
+    if ((entry === "gemini" || entry === "openai") && !providers.includes(entry)) {
+      providers.push(entry);
+    }
+  }
+
+  if (!providers.length) {
+    return ["gemini", "openai"] as Provider[];
+  }
+
+  return providers;
+}
 
 function getOpenAIClient() {
   if (client) return client;
@@ -452,46 +476,13 @@ async function generateWithGemini(input: OptimizerInput) {
     throw new Error("GEMINI_API_KEY is not configured.");
   }
 
-  const model = (process.env.GEMINI_MODEL || "gemini-2.5-flash").replace(/^models\//, "");
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
-
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      generationConfig: {
-        temperature: 0.2,
-        responseMimeType: "application/json"
-      },
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: buildPrompt(input) }]
-        }
-      ]
-    })
+  const raw = await generateGeminiText({
+    apiKey,
+    configuredModel: process.env.GEMINI_MODEL,
+    prompt: buildPrompt(input),
+    responseMimeType: "application/json",
+    temperature: 0.2
   });
-
-  if (!response.ok) {
-    throw new Error(`Gemini API error: ${response.status} ${await response.text()}`);
-  }
-
-  const data = (await response.json()) as {
-    candidates?: Array<{
-      content?: {
-        parts?: Array<{ text?: string }>;
-      };
-    }>;
-  };
-
-  const raw = data.candidates?.[0]?.content?.parts
-    ?.map((part) => part.text || "")
-    .join("")
-    .trim();
-
-  if (!raw) {
-    throw new Error("Gemini returned empty resume optimization response.");
-  }
 
   return JSON.parse(extractJsonPayload(raw));
 }
@@ -500,19 +491,24 @@ export async function generateOptimizedResumeWithAI(input: OptimizerInput) {
   const errors: string[] = [];
   let raw: unknown = null;
 
-  if (process.env.GEMINI_API_KEY) {
-    try {
-      raw = await generateWithGemini(input);
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : "Gemini optimization failed");
-    }
-  }
+  for (const provider of getProviderOrder()) {
+    if (raw) break;
 
-  if (!raw && process.env.OPENAI_API_KEY) {
-    try {
-      raw = await generateWithOpenAI(input);
-    } catch (error) {
-      errors.push(error instanceof Error ? error.message : "OpenAI optimization failed");
+    if (provider === "gemini" && process.env.GEMINI_API_KEY) {
+      try {
+        raw = await generateWithGemini(input);
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : "Gemini optimization failed");
+      }
+      continue;
+    }
+
+    if (provider === "openai" && process.env.OPENAI_API_KEY) {
+      try {
+        raw = await generateWithOpenAI(input);
+      } catch (error) {
+        errors.push(error instanceof Error ? error.message : "OpenAI optimization failed");
+      }
     }
   }
 
