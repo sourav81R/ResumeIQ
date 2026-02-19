@@ -2,7 +2,17 @@
 
 import NextImage from "next/image";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { Download, ExternalLink, Plus, RefreshCw, Sparkles, Trash2, UserRound } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Download,
+  ExternalLink,
+  Plus,
+  RefreshCw,
+  Sparkles,
+  Trash2,
+  UserRound
+} from "lucide-react";
 
 import OptimizedResumePreview from "@/components/OptimizedResumePreview";
 import LoadingSpinner from "@/components/LoadingSpinner";
@@ -45,6 +55,17 @@ function createEmptyProject(): OptimizedResumeContent["projects"][number] {
     link: "",
     bullets: []
   };
+}
+
+function moveItem<T>(items: T[], fromIndex: number, toIndex: number) {
+  if (toIndex < 0 || toIndex >= items.length || fromIndex === toIndex) {
+    return items;
+  }
+
+  const next = [...items];
+  const [entry] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, entry);
+  return next;
 }
 
 function toTextAreaValue(values: string[]) {
@@ -316,6 +337,17 @@ export default function ResumeOptimizationStudio({
     });
   };
 
+  const handleMoveExperience = (index: number, direction: "up" | "down") => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    setDraftContent((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        experience: moveItem(current.experience, index, nextIndex)
+      };
+    });
+  };
+
   const handleAddProject = () => {
     if (!draftContent) return;
     if (draftContent.projects.length >= MAX_PROJECT_ITEMS) {
@@ -334,6 +366,17 @@ export default function ResumeOptimizationStudio({
       if (!current) return current;
       const projects = current.projects.filter((_, entryIndex) => entryIndex !== index);
       return { ...current, projects };
+    });
+  };
+
+  const handleMoveProject = (index: number, direction: "up" | "down") => {
+    const nextIndex = direction === "up" ? index - 1 : index + 1;
+    setDraftContent((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        projects: moveItem(current.projects, index, nextIndex)
+      };
     });
   };
 
@@ -782,50 +825,264 @@ export default function ResumeOptimizationStudio({
               />
             </div>
 
-            {draftContent.experience.map((item, index) => (
-              <div key={`${item.company}-${index}`} className="rounded-xl border border-slate-200 p-3">
-                <p className="mb-2 text-sm font-semibold text-slate-800">Experience #{index + 1}</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Input
-                    placeholder="Company"
-                    value={item.company}
-                    onChange={(event) =>
-                      setDraftContent((current) => {
-                        if (!current) return current;
-                        const experience = [...current.experience];
-                        experience[index] = { ...experience[index], company: event.target.value };
-                        return { ...current, experience };
-                      })
-                    }
-                  />
-                  <Input
-                    placeholder="Role"
-                    value={item.role}
-                    onChange={(event) =>
-                      setDraftContent((current) => {
-                        if (!current) return current;
-                        const experience = [...current.experience];
-                        experience[index] = { ...experience[index], role: event.target.value };
-                        return { ...current, experience };
-                      })
-                    }
-                  />
-                </div>
-                <Textarea
-                  rows={4}
-                  className="mt-2"
-                  value={toTextAreaValue(item.bullets)}
-                  onChange={(event) =>
-                    setDraftContent((current) => {
-                      if (!current) return current;
-                      const experience = [...current.experience];
-                      experience[index] = { ...experience[index], bullets: fromTextAreaValue(event.target.value) };
-                      return { ...current, experience };
-                    })
-                  }
-                />
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-sm font-semibold text-slate-800">Experience</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-8 rounded-lg bg-white px-2.5 text-xs"
+                  onClick={handleAddExperience}
+                  disabled={draftContent.experience.length >= MAX_EXPERIENCE_ITEMS}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Experience
+                </Button>
               </div>
-            ))}
+              {draftContent.experience.length ? (
+                draftContent.experience.map((item, index) => (
+                  <div key={`${item.company}-${index}`} className="rounded-xl border border-slate-200 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-800">Experience #{index + 1}</p>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          onClick={() => handleMoveExperience(index, "up")}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          onClick={() => handleMoveExperience(index, "down")}
+                          disabled={index === draftContent.experience.length - 1}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                          onClick={() => handleRemoveExperience(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="Company"
+                        value={item.company}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const experience = [...current.experience];
+                            experience[index] = { ...experience[index], company: event.target.value };
+                            return { ...current, experience };
+                          })
+                        }
+                      />
+                      <Input
+                        placeholder="Role"
+                        value={item.role}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const experience = [...current.experience];
+                            experience[index] = { ...experience[index], role: event.target.value };
+                            return { ...current, experience };
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-3">
+                      <Input
+                        placeholder="Location"
+                        value={item.location}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const experience = [...current.experience];
+                            experience[index] = { ...experience[index], location: event.target.value };
+                            return { ...current, experience };
+                          })
+                        }
+                      />
+                      <Input
+                        placeholder="Start Date"
+                        value={item.startDate}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const experience = [...current.experience];
+                            experience[index] = { ...experience[index], startDate: event.target.value };
+                            return { ...current, experience };
+                          })
+                        }
+                      />
+                      <Input
+                        placeholder="End Date"
+                        value={item.endDate}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const experience = [...current.experience];
+                            experience[index] = { ...experience[index], endDate: event.target.value };
+                            return { ...current, experience };
+                          })
+                        }
+                      />
+                    </div>
+                    <Textarea
+                      rows={4}
+                      className="mt-2"
+                      placeholder="Impact bullets (one per line)"
+                      value={toTextAreaValue(item.bullets)}
+                      onChange={(event) =>
+                        setDraftContent((current) => {
+                          if (!current) return current;
+                          const experience = [...current.experience];
+                          experience[index] = { ...experience[index], bullets: fromTextAreaValue(event.target.value) };
+                          return { ...current, experience };
+                        })
+                      }
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-600">
+                  No experience entries yet. Click Add Experience to add internships or work history.
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Label className="text-sm font-semibold text-slate-800">Projects</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-8 rounded-lg bg-white px-2.5 text-xs"
+                  onClick={handleAddProject}
+                  disabled={draftContent.projects.length >= MAX_PROJECT_ITEMS}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" />
+                  Add Project
+                </Button>
+              </div>
+              {draftContent.projects.length ? (
+                draftContent.projects.map((project, index) => (
+                  <div key={`${project.name}-${index}`} className="rounded-xl border border-slate-200 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-800">Project #{index + 1}</p>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          onClick={() => handleMoveProject(index, "up")}
+                          disabled={index === 0}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-slate-600 hover:bg-slate-100 hover:text-slate-800"
+                          onClick={() => handleMoveProject(index, "down")}
+                          disabled={index === draftContent.projects.length - 1}
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-8 rounded-lg px-2 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                          onClick={() => handleRemoveProject(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <Input
+                        placeholder="Project Name"
+                        value={project.name}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const projects = [...current.projects];
+                            projects[index] = { ...projects[index], name: event.target.value };
+                            return { ...current, projects };
+                          })
+                        }
+                      />
+                      <Input
+                        placeholder="Project Role"
+                        value={project.role}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const projects = [...current.projects];
+                            projects[index] = { ...projects[index], role: event.target.value };
+                            return { ...current, projects };
+                          })
+                        }
+                      />
+                    </div>
+                    <Input
+                      className="mt-2"
+                      placeholder="Project Link (optional)"
+                      value={project.link || ""}
+                      onChange={(event) =>
+                        setDraftContent((current) => {
+                          if (!current) return current;
+                          const projects = [...current.projects];
+                          projects[index] = { ...projects[index], link: event.target.value };
+                          return { ...current, projects };
+                        })
+                      }
+                    />
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                      <Textarea
+                        rows={3}
+                        placeholder="Tech stack (one per line)"
+                        value={toTextAreaValue(project.tech)}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const projects = [...current.projects];
+                            projects[index] = { ...projects[index], tech: fromTextAreaValue(event.target.value) };
+                            return { ...current, projects };
+                          })
+                        }
+                      />
+                      <Textarea
+                        rows={3}
+                        placeholder="Project bullets (one per line)"
+                        value={toTextAreaValue(project.bullets)}
+                        onChange={(event) =>
+                          setDraftContent((current) => {
+                            if (!current) return current;
+                            const projects = [...current.projects];
+                            projects[index] = { ...projects[index], bullets: fromTextAreaValue(event.target.value) };
+                            return { ...current, projects };
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-xl border border-dashed border-slate-300 p-3 text-sm text-slate-600">
+                  No project entries yet. Click Add Project to include personal, internship, or client projects.
+                </p>
+              )}
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
               <div className="space-y-1">
