@@ -20,6 +20,36 @@ type ParsedAnalysis = {
   sectionFeedback?: Record<string, unknown>;
 };
 
+const STOPWORDS = new Set([
+  "and",
+  "the",
+  "for",
+  "with",
+  "from",
+  "that",
+  "this",
+  "your",
+  "you",
+  "are",
+  "was",
+  "were",
+  "have",
+  "has",
+  "had",
+  "job",
+  "role",
+  "resume",
+  "experience",
+  "skills",
+  "education",
+  "work",
+  "using",
+  "into",
+  "over",
+  "under",
+  "through"
+]);
+
 function getOpenAIClient() {
   if (client) {
     return client;
@@ -84,6 +114,70 @@ function normalizeStringArray(value: unknown, max: number) {
 function toStringValue(value: unknown, fallback: string) {
   const normalized = String(value || "").trim();
   return normalized || fallback;
+}
+
+function tokenizeKeywords(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .toLowerCase()
+        .split(/[^a-z0-9+#.]+/i)
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length >= 3 && !STOPWORDS.has(entry))
+    )
+  );
+}
+
+function analyzeWithHeuristics(input: AnalyzeInput): ParsedAnalysis {
+  const resumeText = input.resumeText || "";
+  const resumeLower = resumeText.toLowerCase();
+  const roleKeywords = tokenizeKeywords(input.jobRole).slice(0, 20);
+
+  const matchedRoleKeywords = roleKeywords.filter((keyword) => resumeLower.includes(keyword));
+  const missingRoleKeywords = roleKeywords.filter((keyword) => !resumeLower.includes(keyword));
+
+  const metricHits = (resumeText.match(/\b\d+(?:\.\d+)?%?\b/g) || []).length;
+  const hasEducationSection =
+    /\b(education|bachelor|master|phd|university|college|certification|degree)\b/i.test(resumeText);
+  const hasExperienceSection = /\b(experience|employment|projects|responsibilities|achieved)\b/i.test(resumeText);
+  const hasSkillsSection = /\b(skills|tools|technologies|stack|languages)\b/i.test(resumeText);
+
+  const keywordMatch = clampScore((matchedRoleKeywords.length / Math.max(roleKeywords.length, 1)) * 100, 45);
+  const skillMatch = clampScore(
+    ((matchedRoleKeywords.length + Number(hasSkillsSection)) / Math.max(roleKeywords.length, 1)) * 100,
+    42
+  );
+  const experienceScore = clampScore((Number(hasExperienceSection) * 55) + Math.min(metricHits * 4, 35), 50);
+  const educationScore = clampScore(hasEducationSection ? 78 : 48, 48);
+
+  const suggestions = [
+    "Add measurable impact metrics to at least 3 recent experience bullets.",
+    "Mirror top target-role keywords naturally in summary and skills sections.",
+    "Use stronger action verbs and concise bullet structure for ATS scanability."
+  ];
+
+  return {
+    breakdown: {
+      keywordMatch,
+      skillMatch,
+      formattingScore: input.formattingScore,
+      experienceScore,
+      educationScore
+    },
+    missingSkills: missingRoleKeywords.slice(0, 12),
+    matchedKeywords: matchedRoleKeywords.slice(0, 20),
+    suggestions,
+    sectionFeedback: {
+      summary: "Tailor the summary to the target role with 2-3 keyword-aligned strengths.",
+      experience: "Prioritize quantified outcomes and impact-focused bullets in recent roles.",
+      skills: "Group skills by category and align tools with the selected job role.",
+      education: hasEducationSection
+        ? "Education is present; add relevant coursework/certifications if needed."
+        : "Add a clear education section with degree, institution, and graduation details.",
+      formatting:
+        "Use consistent headings, tense, and spacing. Keep section titles ATS-friendly and simple."
+    }
+  };
 }
 
 function normalizeAnalysisPayload(raw: ParsedAnalysis, input: AnalyzeInput) {
@@ -242,9 +336,31 @@ async function analyzeWithGemini(input: AnalyzeInput) {
 }
 
 export async function analyzeResumeWithAI(input: AnalyzeInput) {
-  const parsed = (process.env.GEMINI_API_KEY
-    ? await analyzeWithGemini(input)
-    : await analyzeWithOpenAI(input)) as ParsedAnalysis;
+  const errors: string[] = [];
+  let parsed: ParsedAnalysis | null = null;
+
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      parsed = (await analyzeWithGemini(input)) as ParsedAnalysis;
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "Gemini failed");
+    }
+  }
+
+  if (!parsed && process.env.OPENAI_API_KEY) {
+    try {
+      parsed = (await analyzeWithOpenAI(input)) as ParsedAnalysis;
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : "OpenAI failed");
+    }
+  }
+
+  if (!parsed) {
+    if (errors.length) {
+      console.warn("AI analysis fallback activated:", errors.join(" | "));
+    }
+    parsed = analyzeWithHeuristics(input);
+  }
 
   const normalized = normalizeAnalysisPayload(parsed, input);
 

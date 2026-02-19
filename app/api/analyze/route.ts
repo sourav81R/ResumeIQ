@@ -3,9 +3,9 @@ import { ZodError } from "zod";
 
 import { calculateATSScore } from "@/lib/atsScoring";
 import { requireApiUser } from "@/lib/auth-server";
-import { getAdminDb, getAdminStorage, getStorageBucketCandidates } from "@/lib/firebase-admin";
 import { analyzeResumeWithAI } from "@/lib/openai";
-import { parseResumeBuffer } from "@/lib/resumeParser";
+import { getAdminDb } from "@/lib/firebase-admin";
+import { resolveResumeTextAndFormatting } from "@/lib/resume-source";
 import { analyzeSchema } from "@/lib/validations";
 
 export const runtime = "nodejs";
@@ -29,55 +29,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const filePath = String(resumeData.filePath || "");
-    const fileName = String(resumeData.fileName || "resume.pdf");
-    const resumeText = typeof resumeData.resumeText === "string" ? resumeData.resumeText : "";
-    const hasFirestoreFallbackText = resumeText.trim().length > 0;
-
-    let parsedResume: { text: string; formattingScore: number };
-
-    if (hasFirestoreFallbackText) {
-      parsedResume = {
-        text: resumeText,
-        formattingScore: Number(resumeData.formattingScore || 0)
-      };
-    } else {
-      if (!filePath) {
-        return NextResponse.json({ error: "Resume content missing." }, { status: 400 });
-      }
-
-      const preferredBucket = resumeData?.bucketName ? String(resumeData.bucketName) : "";
-      const bucketCandidates = [
-        ...(preferredBucket ? [preferredBucket] : []),
-        ...getStorageBucketCandidates()
-      ].filter((value, index, array) => value && array.indexOf(value) === index);
-
-      let fileBuffer: Buffer | null = null;
-      let lastError: unknown = null;
-
-      for (const bucketName of bucketCandidates) {
-        try {
-          const bucket = getAdminStorage().bucket(bucketName);
-          const [downloaded] = await bucket.file(filePath).download();
-          fileBuffer = downloaded;
-          break;
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      if (!fileBuffer) {
-        throw lastError || new Error("Unable to read resume file from storage bucket.");
-      }
-
-      parsedResume = await parseResumeBuffer({
-        fileName,
-        fileType: fileName.toLowerCase().endsWith(".docx")
-          ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          : "application/pdf",
-        buffer: fileBuffer
-      });
-    }
+    const parsedResume = await resolveResumeTextAndFormatting(resumeData || {});
 
     const targetRole = jobRole || String(resumeData.jobRole || "General Role");
 
@@ -99,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     const updatedData = {
       jobRole: targetRole,
+      resumeText: parsedResume.text,
       atsScore,
       keywordMatch: scoreBreakdown.keywordMatch,
       skillMatch: scoreBreakdown.skillMatch,

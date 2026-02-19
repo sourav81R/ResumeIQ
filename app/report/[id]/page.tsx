@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Download, MoveLeft } from "lucide-react";
 
 import ATSBreakdown from "@/components/ATSBreakdown";
+import ResumeOptimizationStudio from "@/components/ResumeOptimizationStudio";
 import ScoreChart from "@/components/ScoreChart";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -140,6 +141,12 @@ export default async function ReportPage({ params }: PageProps) {
           </div>
         </CardContent>
       </Card>
+
+      <ResumeOptimizationStudio
+        resumeId={resume.id}
+        originalAtsScore={resume.atsScore}
+        originalResumeText={resume.resumeText}
+      />
     </div>
   );
 }

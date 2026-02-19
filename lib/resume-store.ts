@@ -54,6 +54,7 @@ export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRe
     filePath: String(raw.filePath || ""),
     bucketName: raw.bucketName ? String(raw.bucketName) : undefined,
     fileName: String(raw.fileName || "resume"),
+    resumeText: typeof raw.resumeText === "string" ? raw.resumeText : undefined,
     jobRole: String(raw.jobRole || "Unknown Role"),
     atsScore: Number(raw.atsScore || 0),
     keywordMatch: Number(raw.keywordMatch || 0),
