@@ -31,22 +31,22 @@ export default function Navbar() {
   return (
     <header className="sticky top-3 z-50 px-2.5 sm:px-3">
       <div className="container">
-        <div className="flex h-14 w-full items-center justify-between gap-1.5 rounded-full border border-slate-200/80 bg-white/88 px-3 shadow-[0_8px_24px_rgba(2,35,71,0.12)] backdrop-blur-xl sm:h-16 sm:px-4">
+        <div className="flex h-14 w-full items-center justify-between gap-1.5 rounded-full border border-cyan-300/30 bg-[linear-gradient(120deg,rgba(5,22,47,0.9),rgba(8,37,72,0.9),rgba(11,86,104,0.84))] px-3 shadow-[0_12px_34px_rgba(1,30,66,0.32)] backdrop-blur-xl sm:h-16 sm:px-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/85 px-2.5 py-1 text-sm font-semibold tracking-tight text-slate-900 shadow-sm sm:text-base"
+            className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/35 bg-[#0b2b53]/92 px-2.5 py-1 text-sm font-semibold tracking-tight text-white shadow-sm sm:text-base"
           >
-            <Sparkles className="h-4 w-4 text-cyan-600" />
-            <span className="font-display">ResumeIQ</span>
+            <Sparkles className="h-4 w-4 text-cyan-300" />
+            <span className="font-display text-white drop-shadow-[0_1px_1px_rgba(0,0,0,0.35)]">ResumeIQ</span>
           </Link>
 
           <nav className="hidden items-center gap-1.5 lg:flex">
             {isLoggedIn ? (
-              <div className="mr-0.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-sm">
+              <div className="mr-0.5 inline-flex items-center gap-1.5 rounded-full border border-cyan-100/25 bg-white/14 px-2 py-1 shadow-sm backdrop-blur">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-[10px] font-bold text-white">
                   {userInitial}
                 </span>
-                <span className="text-xs font-medium text-slate-700">Hello, {greetingName}</span>
+                <span className="text-xs font-medium text-slate-100">Hello, {greetingName}</span>
               </div>
             ) : null}
 
@@ -57,8 +57,8 @@ export default function Navbar() {
                 className={cn(
                   "rounded-full px-2.5 py-1.5 text-xs font-medium transition",
                   pathname === item.href
-                    ? "bg-cyan-100 text-cyan-800 shadow-sm"
-                    : "text-slate-600 hover:bg-white hover:text-slate-900"
+                    ? "bg-cyan-300/25 text-cyan-100 shadow-sm"
+                    : "text-slate-100 hover:bg-white/15 hover:text-white"
                 )}
               >
                 {item.label}
@@ -66,7 +66,7 @@ export default function Navbar() {
             ))}
 
             {!loading && !isLoggedIn ? (
-              <Button size="sm" asChild>
+              <Button size="sm" asChild className="rounded-full bg-cyan-500 text-slate-950 hover:bg-cyan-400">
                 <Link href="/login">Login</Link>
               </Button>
             ) : null}
@@ -75,7 +75,7 @@ export default function Navbar() {
               <Button
                 size="sm"
                 variant="outline"
-                className="rounded-full bg-white"
+                className="rounded-full border-cyan-100/40 bg-white/95 text-slate-900 hover:bg-white"
                 onClick={async () => {
                   await signOutUser();
                   router.push("/");
@@ -90,7 +90,7 @@ export default function Navbar() {
           <Button
             variant="outline"
             size="icon"
-            className="h-9 w-9 rounded-full bg-white lg:hidden"
+            className="h-9 w-9 rounded-full border-cyan-100/35 bg-white/95 text-slate-900 hover:bg-white lg:hidden"
             onClick={() => setOpen((state) => !state)}
             aria-label="Toggle menu"
           >
