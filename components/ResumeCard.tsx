@@ -28,7 +28,7 @@ function analysisSourceLabel(source?: AnalysisSource) {
 export default function ResumeCard({ resume }: ResumeCardProps) {
   return (
     <div>
-      <Card className="h-full border-slate-200/90 bg-white/95 shadow-[0_12px_26px_rgba(2,32,71,0.09)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_34px_rgba(2,32,71,0.13)]">
+      <Card className="h-full bg-white/92 transition hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(2,32,71,0.16)]">
         <CardHeader className="space-y-3 pb-4">
           <div className="flex items-center justify-between gap-3">
             <CardTitle className="line-clamp-1 font-display text-base text-slate-900">{resume.jobRole}</CardTitle>
@@ -43,7 +43,7 @@ export default function ResumeCard({ resume }: ResumeCardProps) {
         </CardHeader>
 
         <CardContent className="space-y-2 text-sm text-slate-600">
-          <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1.5">
+          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/75 px-2 py-1.5">
             <CalendarDays className="h-4 w-4" />
             {format(new Date(resume.createdAt), "MMM dd, yyyy")}
           </div>
@@ -53,7 +53,7 @@ export default function ResumeCard({ resume }: ResumeCardProps) {
         </CardContent>
 
         <CardFooter className="pt-1">
-          <Button asChild variant="outline" className="h-11 w-full rounded-xl bg-white">
+          <Button asChild variant="outline" className="h-11 w-full bg-white">
             <Link href={`/report/${resume.id}`}>
               View Report
               <ChevronRight className="ml-1 h-4 w-4" />

@@ -83,7 +83,7 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
-      <Card className="border-slate-200/80 bg-white/90">
+      <Card className="bg-white/92">
         <CardHeader className="pb-3">
           <CardTitle className="font-display text-xl text-slate-900">Choose a Template</CardTitle>
         </CardHeader>
@@ -97,19 +97,16 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
                 key={template.id}
                 className={cn(
                   "rounded-xl border p-3 transition",
-                  isSelected ? "border-cyan-300 bg-cyan-50/50 shadow-sm" : "border-slate-200 bg-white"
+                  isSelected
+                    ? "border-cyan-300 bg-cyan-50/55 shadow-[0_10px_24px_rgba(8,145,178,0.12)]"
+                    : "border-slate-200 bg-white"
                 )}
               >
                 <TemplateThumbnail template={template} previewContent={previewContent} />
                 <h3 className="font-semibold text-slate-900">{template.name}</h3>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{template.description}</p>
                 <div className="mt-3 flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    className="h-9 rounded-lg px-3 text-xs"
-                    onClick={() => setSelectedTemplateId(template.id)}
-                  >
+                  <Button type="button" variant={isSelected ? "default" : "outline"} className="h-9 px-3 text-xs" onClick={() => setSelectedTemplateId(template.id)}>
                     {isSelected ? (
                       <>
                         <CheckCircle2 className="mr-1.5 h-4 w-4" />
@@ -119,7 +116,7 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
                       "Preview"
                     )}
                   </Button>
-                  <Button asChild className="h-9 rounded-lg px-3 text-xs">
+                  <Button asChild className="h-9 px-3 text-xs">
                     <Link href={`/resume-builder?templateId=${encodeURIComponent(template.id)}`}>
                       Use Template
                       <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -132,7 +129,7 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
         </CardContent>
       </Card>
 
-      <Card className="border-cyan-200/80 bg-gradient-to-b from-cyan-50/80 to-white">
+      <Card className="bg-[linear-gradient(180deg,rgba(236,254,255,0.95)_0%,rgba(255,255,255,0.92)_100%)]">
         <CardHeader className="pb-2">
           <CardTitle className="font-display text-lg text-slate-900">
             Live Template Preview

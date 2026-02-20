@@ -22,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${jakarta.variable} ${sora.variable} flex min-h-screen flex-col font-sans`}>
         <AuthProvider>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 pb-4 sm:pb-6">{children}</main>
           <SiteFooter />
         </AuthProvider>
       </body>

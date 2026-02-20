@@ -102,167 +102,180 @@ export default function LoginPageClient({ redirectPath }: LoginPageClientProps) 
 
   return (
     <div className="container relative flex min-h-[calc(100vh-4rem)] items-center justify-center py-6 sm:py-10">
-      <div className="pointer-events-none absolute left-0 top-10 h-40 w-40 rounded-full bg-cyan-200/50 blur-3xl" />
-      <div className="pointer-events-none absolute right-0 top-24 h-40 w-40 rounded-full bg-teal-200/45 blur-3xl" />
+      <div className="pointer-events-none absolute left-0 top-10 h-44 w-44 rounded-full bg-cyan-200/50 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-24 h-44 w-44 rounded-full bg-teal-200/45 blur-3xl" />
 
-      <Card className="w-full max-w-md border-slate-200/80 bg-white/95 shadow-[0_22px_45px_rgba(2,34,71,0.14)] sm:max-w-lg">
-        <CardHeader className="space-y-1 pb-1 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700 sm:text-sm">Welcome Back</p>
-          <CardTitle className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            Login
-          </CardTitle>
-          <CardDescription className="sr-only">Login to access your ResumeIQ dashboard.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 px-4 pb-5 sm:px-8 sm:pb-7">
-          {loading ? <LoadingSpinner label="Checking authentication..." /> : null}
-
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-base font-medium text-slate-700 sm:text-lg">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className="h-11 rounded-xl border-slate-300 text-sm sm:h-12 sm:text-base"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-base font-medium text-slate-700 sm:text-lg">
-              Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="h-11 rounded-xl border-slate-300 pr-12 text-sm sm:h-12 sm:text-base"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((state) => !state)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
+      <Card className="w-full max-w-5xl overflow-hidden">
+        <div className="grid lg:grid-cols-[0.95fr_1.05fr]">
+          <div className="hidden bg-[linear-gradient(155deg,#08365e_0%,#0b4a67_54%,#0f766e_100%)] p-8 text-white lg:block">
+            <p className="text-xs font-semibold uppercase tracking-[0.26em] text-cyan-100">ResumeIQ Account</p>
+            <h2 className="mt-4 font-display text-4xl font-semibold leading-tight">Welcome back.</h2>
+            <p className="mt-4 max-w-sm text-sm leading-6 text-cyan-50/95">
+              Continue tracking ATS trends, optimize new roles faster, and keep every resume version organized.
+            </p>
+            <div className="mt-8 space-y-3 text-sm text-cyan-50">
+              <p className="rounded-xl border border-cyan-100/30 bg-white/10 px-3 py-2">Role-weighted ATS scoring</p>
+              <p className="rounded-xl border border-cyan-100/30 bg-white/10 px-3 py-2">AI section rewrite guidance</p>
+              <p className="rounded-xl border border-cyan-100/30 bg-white/10 px-3 py-2">Exportable PDF reports</p>
             </div>
           </div>
 
-          <Button
-            type="button"
-            className="h-11 w-full rounded-xl bg-gradient-to-r from-cyan-600 to-teal-500 text-base font-semibold hover:from-cyan-700 hover:to-teal-600 sm:h-12 sm:text-lg"
-            disabled={busy || loading}
-            onClick={async () => {
-              const validationError = validateCredentials();
-              if (validationError) {
-                setError(validationError);
-                return;
-              }
+          <div>
+            <CardHeader className="space-y-1 pb-1 text-center lg:pt-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-teal-700">Welcome Back</p>
+              <CardTitle className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+                Login
+              </CardTitle>
+              <CardDescription className="sr-only">Login to access your ResumeIQ dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 px-4 pb-6 sm:px-8 sm:pb-8">
+              {loading ? <LoadingSpinner label="Checking authentication..." /> : null}
 
-              setBusy(true);
-              setError("");
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  className="h-11"
+                />
+              </div>
 
-              try {
-                await signInWithEmailPassword(email.trim(), password);
-                router.replace(redirectPath);
-                router.refresh();
-              } catch (err) {
-                setError(normalizeAuthError(err));
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            {busy ? "Please wait..." : "Login"}
-          </Button>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    className="h-11 pr-12"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((state) => !state)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-4 py-1">
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-sm font-semibold uppercase tracking-wider text-slate-400">OR</span>
-            <div className="h-px flex-1 bg-slate-200" />
+              <Button
+                type="button"
+                className="h-11 w-full text-base"
+                disabled={busy || loading}
+                onClick={async () => {
+                  const validationError = validateCredentials();
+                  if (validationError) {
+                    setError(validationError);
+                    return;
+                  }
+
+                  setBusy(true);
+                  setError("");
+
+                  try {
+                    await signInWithEmailPassword(email.trim(), password);
+                    router.replace(redirectPath);
+                    router.refresh();
+                  } catch (err) {
+                    setError(normalizeAuthError(err));
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? "Please wait..." : "Login"}
+              </Button>
+
+              <div className="flex items-center gap-4 py-1">
+                <div className="h-px flex-1 bg-slate-200" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">or</span>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
+              <Button
+                disabled={busy || loading}
+                variant="outline"
+                type="button"
+                className="h-11 w-full text-sm"
+                onClick={async () => {
+                  setBusy(true);
+                  setError("");
+
+                  try {
+                    await signInWithGoogle();
+                    router.replace(redirectPath);
+                    router.refresh();
+                  } catch (err) {
+                    setError(normalizeAuthError(err));
+                    setBusy(false);
+                  } finally {
+                    // Redirect flow navigates away. Keep busy state on success.
+                  }
+                }}
+              >
+                <svg viewBox="0 0 24 24" className="mr-3 h-5 w-5" aria-hidden="true">
+                  <path
+                    fill="#EA4335"
+                    d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3 2.3c1.8-1.6 2.8-4 2.8-6.9 0-.7-.1-1.5-.2-2.2H12z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 21c2.5 0 4.7-.8 6.2-2.1l-3-2.3c-.8.6-1.9 1-3.2 1-2.5 0-4.7-1.7-5.4-4.1l-3.1 2.4C5 18.9 8.2 21 12 21z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M6.6 13.5c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L3.5 7.7C2.9 8.9 2.5 10.2 2.5 11.8s.4 2.9 1.1 4.1l3-2.4z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M12 6.2c1.4 0 2.7.5 3.7 1.4l2.8-2.8C16.7 3.2 14.5 2.3 12 2.3 8.2 2.3 5 4.4 3.5 7.7l3.1 2.4c.7-2.4 2.9-3.9 5.4-3.9z"
+                  />
+                </svg>
+                {busy ? "Signing in..." : "Continue with Google"}
+              </Button>
+
+              <p className="text-center text-xs text-slate-600 sm:text-sm">
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  disabled={busy || loading}
+                  className="font-semibold text-teal-700 hover:text-teal-800"
+                  onClick={async () => {
+                    const validationError = validateCredentials();
+                    if (validationError) {
+                      setError(validationError);
+                      return;
+                    }
+
+                    setBusy(true);
+                    setError("");
+
+                    try {
+                      await registerWithEmailPassword(email.trim(), password);
+                      router.replace(redirectPath);
+                      router.refresh();
+                    } catch (err) {
+                      setError(normalizeAuthError(err));
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Register
+                </button>
+              </p>
+
+              {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+            </CardContent>
           </div>
-
-          <Button
-            disabled={busy || loading}
-            variant="outline"
-            type="button"
-            className="h-11 w-full rounded-xl border-slate-300 bg-white text-base font-semibold text-slate-700 hover:bg-slate-50 sm:h-12 sm:text-lg"
-            onClick={async () => {
-              setBusy(true);
-              setError("");
-
-              try {
-                await signInWithGoogle();
-                router.replace(redirectPath);
-                router.refresh();
-              } catch (err) {
-                setError(normalizeAuthError(err));
-                setBusy(false);
-              } finally {
-                // Redirect flow navigates away. Keep busy state on success.
-              }
-            }}
-          >
-            <svg viewBox="0 0 24 24" className="mr-3 h-5 w-5" aria-hidden="true">
-              <path
-                fill="#EA4335"
-                d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3 2.3c1.8-1.6 2.8-4 2.8-6.9 0-.7-.1-1.5-.2-2.2H12z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 21c2.5 0 4.7-.8 6.2-2.1l-3-2.3c-.8.6-1.9 1-3.2 1-2.5 0-4.7-1.7-5.4-4.1l-3.1 2.4C5 18.9 8.2 21 12 21z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M6.6 13.5c-.2-.6-.3-1.1-.3-1.7s.1-1.2.3-1.7L3.5 7.7C2.9 8.9 2.5 10.2 2.5 11.8s.4 2.9 1.1 4.1l3-2.4z"
-              />
-              <path
-                fill="#4285F4"
-                d="M12 6.2c1.4 0 2.7.5 3.7 1.4l2.8-2.8C16.7 3.2 14.5 2.3 12 2.3 8.2 2.3 5 4.4 3.5 7.7l3.1 2.4c.7-2.4 2.9-3.9 5.4-3.9z"
-              />
-            </svg>
-            {busy ? "Signing in..." : "Continue with Google"}
-          </Button>
-
-          <p className="text-center text-xs text-slate-600 sm:text-sm">
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              disabled={busy || loading}
-              className="font-semibold text-teal-700 hover:text-teal-800"
-              onClick={async () => {
-                const validationError = validateCredentials();
-                if (validationError) {
-                  setError(validationError);
-                  return;
-                }
-
-                setBusy(true);
-                setError("");
-
-                try {
-                  await registerWithEmailPassword(email.trim(), password);
-                  router.replace(redirectPath);
-                  router.refresh();
-                } catch (err) {
-                  setError(normalizeAuthError(err));
-                } finally {
-                  setBusy(false);
-                }
-              }}
-            >
-              Register
-            </button>
-          </p>
-
-          {error ? <p className="text-sm text-rose-600">{error}</p> : null}
-        </CardContent>
+        </div>
       </Card>
     </div>
   );

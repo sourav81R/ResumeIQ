@@ -46,14 +46,14 @@ export default async function ReportPage({ params }: PageProps) {
   return (
     <div className="container py-6 sm:py-8 md:py-10">
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="outline" asChild className="h-11 rounded-xl bg-white">
+        <Button variant="outline" asChild className="h-11 bg-white">
           <Link href="/dashboard">
             <MoveLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Link>
         </Button>
 
-        <Button asChild className="h-11 rounded-xl">
+        <Button asChild className="h-11">
           <Link href={`/api/report/${resume.id}/download`}>
             <Download className="mr-2 h-4 w-4" />
             Download PDF Report
@@ -62,10 +62,10 @@ export default async function ReportPage({ params }: PageProps) {
       </div>
 
       <div className="mb-6 grid gap-4 xl:grid-cols-[260px_1fr]">
-        <Card className="border-cyan-100 bg-gradient-to-b from-cyan-50/85 to-white">
+        <Card className="bg-[linear-gradient(180deg,rgba(236,254,255,0.96)_0%,rgba(255,255,255,0.92)_100%)]">
           <CardContent className="space-y-3 pt-6">
             <div className="flex items-center justify-center">
-              <Badge variant="default" className="bg-slate-800 text-white">
+              <Badge variant="default" className="bg-slate-900 text-white">
                 Analysis Source: {analysisSourceLabel(resume.analysisSource)}
               </Badge>
             </div>
@@ -73,7 +73,7 @@ export default async function ReportPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/92">
           <CardHeader>
             <CardTitle className="font-display text-xl">ATS Breakdown</CardTitle>
           </CardHeader>
@@ -90,7 +90,7 @@ export default async function ReportPage({ params }: PageProps) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className="bg-white/92">
           <CardHeader>
             <CardTitle className="font-display text-xl">Skill Gap Analysis</CardTitle>
           </CardHeader>
@@ -98,7 +98,7 @@ export default async function ReportPage({ params }: PageProps) {
             {resume.feedback.missingSkills.length ? (
               <ul className="space-y-2 text-sm text-slate-700">
                 {resume.feedback.missingSkills.map((skill) => (
-                  <li key={skill} className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                  <li key={skill} className="rounded-xl border border-amber-200 bg-amber-50/75 px-3 py-2">
                     {skill}
                   </li>
                 ))}
@@ -109,7 +109,7 @@ export default async function ReportPage({ params }: PageProps) {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white/92">
           <CardHeader>
             <CardTitle className="font-display text-xl">AI Improvement Suggestions</CardTitle>
           </CardHeader>
@@ -117,7 +117,7 @@ export default async function ReportPage({ params }: PageProps) {
             {resume.feedback.suggestions.length ? (
               <ol className="space-y-2 text-sm text-slate-700">
                 {resume.feedback.suggestions.map((suggestion, index) => (
-                  <li key={suggestion} className="rounded-xl border border-cyan-200 bg-cyan-50 px-3 py-2">
+                  <li key={suggestion} className="rounded-xl border border-cyan-200 bg-cyan-50/75 px-3 py-2">
                     {index + 1}. {suggestion}
                   </li>
                 ))}
@@ -129,28 +129,28 @@ export default async function ReportPage({ params }: PageProps) {
         </Card>
       </div>
 
-      <Card className="mt-4">
+      <Card className="mt-4 bg-white/92">
         <CardHeader>
           <CardTitle className="font-display text-xl">Section-wise Feedback</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
             <p className="mb-1 font-semibold text-slate-900">Summary</p>
             <p className="text-slate-600">{resume.feedback.sectionFeedback.summary || "N/A"}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
             <p className="mb-1 font-semibold text-slate-900">Experience</p>
             <p className="text-slate-600">{resume.feedback.sectionFeedback.experience || "N/A"}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
             <p className="mb-1 font-semibold text-slate-900">Skills</p>
             <p className="text-slate-600">{resume.feedback.sectionFeedback.skills || "N/A"}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm">
             <p className="mb-1 font-semibold text-slate-900">Education</p>
             <p className="text-slate-600">{resume.feedback.sectionFeedback.education || "N/A"}</p>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-white p-3 text-sm sm:col-span-2 xl:col-span-1">
+          <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-sm sm:col-span-2 xl:col-span-1">
             <p className="mb-1 font-semibold text-slate-900">Formatting</p>
             <p className="text-slate-600">{resume.feedback.sectionFeedback.formatting || "N/A"}</p>
           </div>
