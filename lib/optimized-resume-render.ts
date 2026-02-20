@@ -116,3 +116,85 @@ export function compactOptimizedResumeContent(content: OptimizedResumeContent): 
     certifications: trimList(content.certifications, 10, 100)
   };
 }
+
+export function optimizedResumeContentToPlainText(content: OptimizedResumeContent) {
+  const compact = compactOptimizedResumeContent(content);
+  const lines: string[] = [];
+
+  const pushLine = (value = "") => {
+    lines.push(value);
+  };
+
+  const pushSection = (title: string) => {
+    if (lines.length) {
+      pushLine("");
+    }
+    pushLine(title);
+  };
+
+  const contact = [compact.header.email, compact.header.phone, compact.header.location].filter(Boolean).join(" | ");
+
+  pushSection("HEADER");
+  pushLine(compact.header.name || "Candidate Name");
+  if (compact.header.role) pushLine(compact.header.role);
+  if (contact) pushLine(contact);
+  if (compact.header.links.length) {
+    pushLine(`Links: ${compact.header.links.join(", ")}`);
+  }
+
+  if (compact.summary) {
+    pushSection("PROFESSIONAL SUMMARY");
+    pushLine(compact.summary);
+  }
+
+  if (compact.skills.core.length || compact.skills.tools.length || compact.skills.soft.length) {
+    pushSection("SKILLS");
+    if (compact.skills.core.length) pushLine(`Core: ${compact.skills.core.join(", ")}`);
+    if (compact.skills.tools.length) pushLine(`Tools: ${compact.skills.tools.join(", ")}`);
+    if (compact.skills.soft.length) pushLine(`Soft: ${compact.skills.soft.join(", ")}`);
+  }
+
+  if (compact.experience.length) {
+    pushSection("EXPERIENCE");
+    compact.experience.forEach((item, index) => {
+      const title = [item.role, item.company].filter(Boolean).join(" | ") || `Experience ${index + 1}`;
+      const duration = [item.startDate, item.endDate].filter(Boolean).join(" - ");
+      pushLine(title);
+      if (duration) pushLine(duration);
+      if (item.location) pushLine(item.location);
+      item.bullets.forEach((bullet) => pushLine(`- ${bullet}`));
+      if (index < compact.experience.length - 1) pushLine("");
+    });
+  }
+
+  if (compact.projects.length) {
+    pushSection("PROJECTS");
+    compact.projects.forEach((project, index) => {
+      const title = [project.name, project.role].filter(Boolean).join(" - ") || `Project ${index + 1}`;
+      pushLine(title);
+      if (project.tech.length) pushLine(`Tech Stack: ${project.tech.join(", ")}`);
+      project.bullets.forEach((bullet) => pushLine(`- ${bullet}`));
+      if (project.link) pushLine(`Link: ${project.link}`);
+      if (index < compact.projects.length - 1) pushLine("");
+    });
+  }
+
+  if (compact.education.length) {
+    pushSection("EDUCATION");
+    compact.education.forEach((item, index) => {
+      const title = [item.degree, item.institution].filter(Boolean).join(" | ") || `Education ${index + 1}`;
+      const duration = [item.startDate, item.endDate].filter(Boolean).join(" - ");
+      pushLine(title);
+      if (duration) pushLine(duration);
+      item.details.forEach((detail) => pushLine(`- ${detail}`));
+      if (index < compact.education.length - 1) pushLine("");
+    });
+  }
+
+  if (compact.certifications.length) {
+    pushSection("CERTIFICATIONS");
+    compact.certifications.forEach((certification) => pushLine(`- ${certification}`));
+  }
+
+  return lines.join("\n").trim();
+}

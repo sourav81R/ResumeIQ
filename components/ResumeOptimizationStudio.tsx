@@ -7,6 +7,7 @@ import {
   ArrowUp,
   Download,
   ExternalLink,
+  FileText,
   Plus,
   RefreshCw,
   Sparkles,
@@ -21,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { optimizedResumeContentToPlainText } from "@/lib/optimized-resume-render";
 import { buildTemplatePreviewContent } from "@/lib/template-preview-data";
 import { OptimizedResumeContent, OptimizedResumeVersion, ResumeTemplate } from "@/types";
 
@@ -278,6 +280,11 @@ export default function ResumeOptimizationStudio({
     () =>
       previewTemplate ? templatePreviewMap[previewTemplate.id] || buildTemplatePreviewContent(previewTemplate) : null,
     [previewTemplate, templatePreviewMap]
+  );
+  const latestPreviewContent = draftContent || previewTemplateContent;
+  const latestImprovedPreviewText = useMemo(
+    () => (draftContent ? optimizedResumeContentToPlainText(draftContent).slice(0, 2600) : ""),
+    [draftContent]
   );
   const activeTemplate = useMemo(() => {
     if (!activeVersion) return null;
@@ -548,6 +555,36 @@ export default function ResumeOptimizationStudio({
     }
   };
 
+  const handleDownloadText = async () => {
+    if (!activeVersion || !draftContent) return;
+
+    try {
+      setError("");
+      let versionId = activeVersion.id;
+
+      if (hasUnsavedDraftChanges) {
+        setStatus("Saving latest edits before text download...");
+        const savedId = await persistDraftContent();
+        if (!savedId) return;
+        versionId = savedId;
+      }
+
+      const contentText = optimizedResumeContentToPlainText(draftContent);
+      const blob = new Blob([contentText], { type: "text/plain;charset=utf-8" });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `ResumeIQ-Optimized-${versionId}.txt`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(url);
+      setStatus("Text download started.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unable to download text.");
+    }
+  };
+
   const originalPreviewText = (originalResumeText || "").slice(0, 1800).trim();
 
   return (
@@ -641,11 +678,13 @@ export default function ResumeOptimizationStudio({
             })}
           </div>
 
-          {previewTemplate && previewTemplateContent ? (
+          {previewTemplate && latestPreviewContent ? (
             <div className="rounded-xl border border-slate-200 bg-white p-3">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Advance Preview</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Latest Preview
+                  </p>
                   <p className="text-sm font-semibold text-slate-900">{previewTemplate.name}</p>
                 </div>
                 <Button
@@ -660,8 +699,13 @@ export default function ResumeOptimizationStudio({
                   {selectedTemplateId === previewTemplate.id ? "Template Selected" : "Choose This Template"}
                 </Button>
               </div>
+              {draftContent ? (
+                <p className="mb-2 text-xs text-slate-600">
+                  Showing your latest optimized edits in this template style.
+                </p>
+              ) : null}
               <div className="max-h-[420px] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
-                <OptimizedResumePreview content={previewTemplateContent} template={previewTemplate} />
+                <OptimizedResumePreview content={latestPreviewContent} template={previewTemplate} />
               </div>
             </div>
           ) : null}
@@ -733,9 +777,11 @@ export default function ResumeOptimizationStudio({
                 </div>
                 <div className="rounded-xl border border-cyan-200 bg-cyan-50/40 p-3">
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Optimized Summary
+                    Latest Improved Text
                   </p>
-                  <p className="text-sm leading-relaxed text-slate-700">{draftContent.summary || "N/A"}</p>
+                  <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">
+                    {latestImprovedPreviewText || "Optimized text preview will appear here after generation."}
+                  </p>
                 </div>
               </div>
 
@@ -776,16 +822,28 @@ export default function ResumeOptimizationStudio({
               <div className="flex items-start justify-between gap-3">
                 <CardTitle className="font-display text-lg">Live Template Preview</CardTitle>
                 {activeVersion ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="h-9 rounded-lg bg-white"
-                    onClick={handleDownloadPdf}
-                    disabled={saving || loading}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    {hasUnsavedDraftChanges ? "Save + Download PDF" : "Download PDF"}
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-lg bg-white"
+                      onClick={handleDownloadText}
+                      disabled={saving || loading}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      {hasUnsavedDraftChanges ? "Save + Download TXT" : "Download TXT"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 rounded-lg bg-white"
+                      onClick={handleDownloadPdf}
+                      disabled={saving || loading}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      {hasUnsavedDraftChanges ? "Save + Download PDF" : "Download PDF"}
+                    </Button>
+                  </div>
                 ) : null}
               </div>
             </CardHeader>
