@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Download, MoveLeft } from "lucide-react";
 
 import ATSBreakdown from "@/components/ATSBreakdown";
+import JobMatchingEngine from "@/components/JobMatchingEngine";
 import ResumeOptimizationStudio from "@/components/ResumeOptimizationStudio";
 import ScoreChart from "@/components/ScoreChart";
 import { Badge } from "@/components/ui/badge";
@@ -155,6 +156,8 @@ export default async function ReportPage({ params }: PageProps) {
           </div>
         </CardContent>
       </Card>
+
+      <JobMatchingEngine resumeId={resume.id} jobRole={resume.jobRole} initialJobMatch={resume.jobMatch} />
 
       <ResumeOptimizationStudio
         resumeId={resume.id}

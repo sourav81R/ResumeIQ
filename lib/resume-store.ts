@@ -1,5 +1,5 @@
 import { getAdminDb } from "@/lib/firebase-admin";
-import { ResumeFeedback, ResumeRecord } from "@/types";
+import { JobMatchResult, ResumeFeedback, ResumeRecord } from "@/types";
 
 export const EMPTY_FEEDBACK: ResumeFeedback = {
   missingSkills: [],
@@ -46,6 +46,61 @@ function normalizeFeedback(rawFeedback: unknown): ResumeFeedback {
   };
 }
 
+function normalizeJobMatch(rawJobMatch: unknown): JobMatchResult | undefined {
+  if (!rawJobMatch || typeof rawJobMatch !== "object") {
+    return undefined;
+  }
+
+  const jobMatch = rawJobMatch as Record<string, unknown>;
+
+  const toScore = (value: unknown) => {
+    const numeric = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(numeric)) return 0;
+    return Math.max(0, Math.min(100, Math.round(numeric)));
+  };
+
+  const normalizeList = (value: unknown, max: number) =>
+    Array.isArray(value)
+      ? value
+          .map((item) => (typeof item === "string" ? item.trim() : ""))
+          .filter((item) => item.length > 0)
+          .slice(0, max)
+      : [];
+
+  const interviewQA = Array.isArray(jobMatch.interviewQA)
+    ? jobMatch.interviewQA
+        .map((entry) => {
+          const row = entry && typeof entry === "object" ? (entry as Record<string, unknown>) : {};
+          const question = typeof row.question === "string" ? row.question.trim() : "";
+          const answer = typeof row.answer === "string" ? row.answer.trim() : "";
+          if (!question || !answer) return null;
+          return { question, answer };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
+        .slice(0, 20)
+    : [];
+
+  const source =
+    jobMatch.source === "gemini" ||
+    jobMatch.source === "openai" ||
+    jobMatch.source === "heuristic" ||
+    jobMatch.source === "unknown"
+      ? jobMatch.source
+      : "unknown";
+
+  return {
+    jobDescriptionText: typeof jobMatch.jobDescriptionText === "string" ? jobMatch.jobDescriptionText : "",
+    matchScore: toScore(jobMatch.matchScore),
+    missingKeywords: normalizeList(jobMatch.missingKeywords, 25),
+    requiredSkillsGap: normalizeList(jobMatch.requiredSkillsGap, 25),
+    improvementSuggestions: normalizeList(jobMatch.improvementSuggestions, 12),
+    shortlistProbability: toScore(jobMatch.shortlistProbability),
+    interviewQA,
+    source,
+    updatedAt: typeof jobMatch.updatedAt === "string" ? jobMatch.updatedAt : new Date().toISOString()
+  };
+}
+
 export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRecord {
   return {
     id,
@@ -71,6 +126,7 @@ export function mapResumeDoc(id: string, raw: Record<string, unknown>): ResumeRe
         ? raw.analysisSource
         : "unknown",
     feedback: normalizeFeedback(raw.feedback),
+    jobMatch: normalizeJobMatch(raw.jobMatch),
     createdAt: String(raw.createdAt || new Date().toISOString()),
     updatedAt: raw.updatedAt ? String(raw.updatedAt) : undefined
   };

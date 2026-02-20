@@ -13,6 +13,23 @@ export type ResumeFeedback = {
   sectionFeedback: SectionFeedback;
 };
 
+export type InterviewQAItem = {
+  question: string;
+  answer: string;
+};
+
+export type JobMatchResult = {
+  jobDescriptionText: string;
+  matchScore: number;
+  missingKeywords: string[];
+  requiredSkillsGap: string[];
+  improvementSuggestions: string[];
+  shortlistProbability: number;
+  interviewQA: InterviewQAItem[];
+  source: AnalysisSource;
+  updatedAt: string;
+};
+
 export type ScoreBreakdown = {
   keywordMatch: number;
   skillMatch: number;
@@ -41,6 +58,7 @@ export type ResumeRecord = {
   educationScore: number;
   analysisSource?: AnalysisSource;
   feedback: ResumeFeedback;
+  jobMatch?: JobMatchResult;
   createdAt: string;
   updatedAt?: string;
 };
