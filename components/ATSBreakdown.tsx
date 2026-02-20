@@ -121,5 +121,3 @@ export default function ATSBreakdown(props: ATSBreakdownProps) {
     </div>
   );
 }
-
-

@@ -16,25 +16,74 @@ type Params = {
   };
 };
 
-function wrapText(text: string, maxWidth: number, font: PDFFont, size: number) {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let line = "";
+function splitTokenByWidth(token: string, maxWidth: number, font: PDFFont, size: number) {
+  if (!token) {
+    return [];
+  }
 
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    const width = font.widthOfTextAtSize(next, size);
+  if (font.widthOfTextAtSize(token, size) <= maxWidth) {
+    return [token];
+  }
 
-    if (!line || width <= maxWidth) {
-      line = next;
+  const chunks: string[] = [];
+  let current = "";
+
+  for (const char of Array.from(token)) {
+    const next = `${current}${char}`;
+    if (!current || font.widthOfTextAtSize(next, size) <= maxWidth) {
+      current = next;
     } else {
-      lines.push(line);
-      line = word;
+      chunks.push(current);
+      current = char;
     }
   }
 
-  if (line) {
-    lines.push(line);
+  if (current) {
+    chunks.push(current);
+  }
+
+  return chunks;
+}
+
+function wrapText(text: string, maxWidth: number, font: PDFFont, size: number) {
+  const lines: string[] = [];
+  const paragraphs = text.split(/\r?\n/);
+
+  for (const paragraph of paragraphs) {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    let line = "";
+
+    for (const word of words) {
+      if (font.widthOfTextAtSize(word, size) > maxWidth) {
+        if (line) {
+          lines.push(line);
+          line = "";
+        }
+
+        const chunks = splitTokenByWidth(word, maxWidth, font, size);
+        if (chunks.length > 1) {
+          lines.push(...chunks.slice(0, -1));
+          line = chunks[chunks.length - 1] || "";
+        } else if (chunks.length === 1) {
+          line = chunks[0];
+        }
+        continue;
+      }
+
+      const next = line ? `${line} ${word}` : word;
+      const width = font.widthOfTextAtSize(next, size);
+
+      if (!line || width <= maxWidth) {
+        line = next;
+      } else {
+        lines.push(line);
+        line = word;
+      }
+    }
+
+    if (line) {
+      lines.push(line);
+    }
   }
 
   return lines.length ? lines : [""];
@@ -190,6 +239,30 @@ function canFitOnSinglePage(
     }
   };
 
+  const drawBullet = (
+    text: string,
+    options?: {
+      width?: number;
+      size?: number;
+      lineGap?: number;
+    }
+  ) => {
+    if (overflow || !text.trim()) return;
+
+    const size = (options?.size ?? RESUME_LAYOUT.font.bodyTight) * scale;
+    const lineGap = (options?.lineGap ?? RESUME_LAYOUT.lineGap.tight) * scale;
+    const width = options?.width ?? maxWidth;
+    const bulletGap = 7 * scale;
+    const textWidth = Math.max(48, width - bulletGap);
+    const lines = wrapText(text, textWidth, font, size);
+    const lineHeight = size + lineGap;
+
+    for (const _line of lines) {
+      if (!ensureSpace(lineHeight)) return;
+      y -= lineHeight;
+    }
+  };
+
 
   const drawLeftRight = (left: string, right: string, size: number, isBold = false) => {
     if (overflow) return;
@@ -309,7 +382,7 @@ function canFitOnSinglePage(
         drawWrapped(exp.location, { size: RESUME_LAYOUT.font.meta, lineGap: RESUME_LAYOUT.lineGap.meta });
       }
       for (const bullet of exp.bullets) {
-        drawWrapped(`- ${bullet}`, {
+        drawBullet(bullet, {
           width: maxWidth - 7 * scale,
           size: RESUME_LAYOUT.font.bodyTight,
           lineGap: RESUME_LAYOUT.lineGap.tight
@@ -338,7 +411,7 @@ function canFitOnSinglePage(
         });
       }
       for (const bullet of project.bullets) {
-        drawWrapped(`- ${bullet}`, {
+        drawBullet(bullet, {
           width: maxWidth - 7 * scale,
           size: 9,
           lineGap: RESUME_LAYOUT.lineGap.tight
@@ -361,7 +434,7 @@ function canFitOnSinglePage(
       const line = [edu.degree, edu.institution].filter(Boolean).join(" | ") || "Degree | Institution";
       drawLeftRight(line, dates, 9.3, true);
       for (const detail of edu.details) {
-        drawWrapped(`- ${detail}`, {
+        drawBullet(detail, {
           width: maxWidth - 7 * scale,
           size: 8.8,
           lineGap: RESUME_LAYOUT.lineGap.meta
@@ -374,7 +447,7 @@ function canFitOnSinglePage(
   if (content.certifications.length) {
     drawSectionTitle("CERTIFICATIONS");
     for (const certification of content.certifications) {
-      drawWrapped(`- ${certification}`, {
+      drawBullet(certification, {
         width: maxWidth - 7 * scale,
         size: 9,
         lineGap: RESUME_LAYOUT.lineGap.tight
@@ -731,7 +804,7 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
         drawWrapped(exp.location, { size: RESUME_LAYOUT.font.meta, color: mutedColor, lineGap: RESUME_LAYOUT.lineGap.meta });
       }
       for (const bullet of exp.bullets) {
-        drawWrapped(`- ${bullet}`, {
+        drawBulletLine(bullet, {
           x: margin + 7 * scale,
           width: maxWidth - 7 * scale,
           size: RESUME_LAYOUT.font.bodyTight,
@@ -764,7 +837,7 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
         });
       }
       for (const bullet of project.bullets) {
-        drawWrapped(`- ${bullet}`, {
+        drawBulletLine(bullet, {
           x: margin + 7 * scale,
           width: maxWidth - 7 * scale,
           size: 9,
@@ -790,7 +863,7 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
       const line = [edu.degree, edu.institution].filter(Boolean).join(" | ") || "Degree | Institution";
       drawLeftRight(line, dates, 9.3, true);
       for (const detail of edu.details) {
-        drawWrapped(`- ${detail}`, {
+        drawBulletLine(detail, {
           x: margin + 7 * scale,
           width: maxWidth - 7 * scale,
           size: 8.8,
