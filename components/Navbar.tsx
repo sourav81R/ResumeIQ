@@ -29,24 +29,24 @@ export default function Navbar() {
   const userInitial = greetingName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-4 z-50 px-3 sm:px-4">
+    <header className="sticky top-3 z-50 px-2.5 sm:px-3">
       <div className="container">
-        <div className="flex h-16 w-full items-center justify-between gap-2 rounded-full border border-slate-200/80 bg-white/88 px-4 shadow-[0_10px_30px_rgba(2,35,71,0.14)] backdrop-blur-xl sm:h-[72px] sm:px-6">
+        <div className="flex h-14 w-full items-center justify-between gap-1.5 rounded-full border border-slate-200/80 bg-white/88 px-3 shadow-[0_8px_24px_rgba(2,35,71,0.12)] backdrop-blur-xl sm:h-16 sm:px-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200/70 bg-white/85 px-3 py-1.5 text-base font-semibold tracking-tight text-slate-900 shadow-sm sm:text-lg"
+            className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/70 bg-white/85 px-2.5 py-1 text-sm font-semibold tracking-tight text-slate-900 shadow-sm sm:text-base"
           >
-            <Sparkles className="h-5 w-5 text-cyan-600" />
+            <Sparkles className="h-4 w-4 text-cyan-600" />
             <span className="font-display">ResumeIQ</span>
           </Link>
 
-          <nav className="hidden items-center gap-2 lg:flex">
+          <nav className="hidden items-center gap-1.5 lg:flex">
             {isLoggedIn ? (
-              <div className="mr-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm">
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-xs font-bold text-white">
+              <div className="mr-0.5 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1 shadow-sm">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-[10px] font-bold text-white">
                   {userInitial}
                 </span>
-                <span className="text-sm font-medium text-slate-700">Hello, {greetingName}</span>
+                <span className="text-xs font-medium text-slate-700">Hello, {greetingName}</span>
               </div>
             ) : null}
 
@@ -55,7 +55,7 @@ export default function Navbar() {
                 key={item.href}
                 href={getNavHref(item.href)}
                 className={cn(
-                  "rounded-full px-3 py-2 text-sm font-medium transition",
+                  "rounded-full px-2.5 py-1.5 text-xs font-medium transition",
                   pathname === item.href
                     ? "bg-cyan-100 text-cyan-800 shadow-sm"
                     : "text-slate-600 hover:bg-white hover:text-slate-900"
@@ -81,7 +81,7 @@ export default function Navbar() {
                   router.push("/");
                 }}
               >
-                <LogOut className="mr-2 h-4 w-4" />
+                <LogOut className="mr-1.5 h-3.5 w-3.5" />
                 Logout
               </Button>
             ) : null}
@@ -90,22 +90,22 @@ export default function Navbar() {
           <Button
             variant="outline"
             size="icon"
-            className="rounded-full bg-white lg:hidden"
+            className="h-9 w-9 rounded-full bg-white lg:hidden"
             onClick={() => setOpen((state) => !state)}
             aria-label="Toggle menu"
           >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {open ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
           </Button>
         </div>
       </div>
 
       {open ? (
         <div className="container">
-          <div className="mt-2 w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-[0_14px_34px_rgba(2,35,71,0.14)] backdrop-blur lg:hidden">
-            <div className="flex flex-col gap-2 p-4">
+          <div className="mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 bg-white/95 shadow-[0_12px_28px_rgba(2,35,71,0.12)] backdrop-blur lg:hidden">
+            <div className="flex flex-col gap-1.5 p-3">
               {isLoggedIn ? (
-                <div className="mb-1 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
-                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-xs font-bold text-white">
+                <div className="mb-1 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs font-medium text-slate-700">
+                  <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-600 to-teal-500 text-[10px] font-bold text-white">
                     {userInitial}
                   </span>
                   Hello, {greetingName}
@@ -116,7 +116,7 @@ export default function Navbar() {
                 <Link
                   key={item.href}
                   href={getNavHref(item.href)}
-                  className="rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-200 hover:bg-slate-100"
+                  className="rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:border-slate-200 hover:bg-slate-100"
                   onClick={() => setOpen(false)}
                 >
                   {item.label}
