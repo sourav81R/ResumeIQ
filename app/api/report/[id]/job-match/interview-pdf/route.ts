@@ -60,6 +60,14 @@ function questionKey(question: string) {
     .trim();
 }
 
+function answerKey(answer: string) {
+  return answer
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function tokenizeKeywords(value: string) {
   return Array.from(
     new Set(
@@ -127,14 +135,14 @@ function buildSupplementalQuestions(resume: NonNullable<Awaited<ReturnType<typeo
   missing.forEach((keyword) => {
     items.push({
       question: `The JD emphasizes ${keyword}. How would you close that gap quickly if selected?`,
-      answer: "Provide a concrete 30-60-90 day upskilling and delivery plan tied to business outcomes."
+      answer: `For ${keyword}, I would run a 30-60-90 day upskilling and delivery plan with one scoped feature in month one, measurable improvement by month two, and ownership expansion by month three.`
     });
   });
 
   gaps.forEach((gap) => {
     items.push({
       question: `How would you demonstrate capability in ${gap} during your first quarter?`,
-      answer: "Describe milestones, measurable outcomes, and how you would validate impact with stakeholders."
+      answer: `To demonstrate capability in ${gap}, I would define quarterly milestones, deliver one production use case, and review impact with stakeholders using agreed success metrics.`
     });
   });
 
@@ -151,14 +159,17 @@ function buildSupplementalQuestions(resume: NonNullable<Awaited<ReturnType<typeo
 function ensureTwentyUniqueInterviewQA(resume: NonNullable<Awaited<ReturnType<typeof getResumeById>>>) {
   const sourceItems = resume.jobMatch?.interviewQA || [];
   const unique: Array<{ question: string; answer: string }> = [];
-  const seen = new Set<string>();
+  const seenQuestions = new Set<string>();
+  const seenAnswers = new Set<string>();
 
   for (const item of sourceItems) {
     const question = cleanText(item.question);
     const answer = cleanText(item.answer);
-    const key = questionKey(question);
-    if (!question || !answer || !key || seen.has(key) || isWeakAnswer(answer)) continue;
-    seen.add(key);
+    const questionId = questionKey(question);
+    const answerId = answerKey(answer);
+    if (!question || !answer || !questionId || seenQuestions.has(questionId) || !answerId || seenAnswers.has(answerId) || isWeakAnswer(answer)) continue;
+    seenQuestions.add(questionId);
+    seenAnswers.add(answerId);
     unique.push({ question, answer });
     if (unique.length >= 20) break;
   }
@@ -166,9 +177,11 @@ function ensureTwentyUniqueInterviewQA(resume: NonNullable<Awaited<ReturnType<ty
   if (unique.length < 20) {
     const supplemental = buildSupplementalQuestions(resume);
     for (const item of supplemental) {
-      const key = questionKey(item.question);
-      if (!key || seen.has(key)) continue;
-      seen.add(key);
+      const questionId = questionKey(item.question);
+      const answerId = answerKey(item.answer);
+      if (!questionId || seenQuestions.has(questionId) || !answerId || seenAnswers.has(answerId)) continue;
+      seenQuestions.add(questionId);
+      seenAnswers.add(answerId);
       unique.push(item);
       if (unique.length >= 20) break;
     }
@@ -177,12 +190,15 @@ function ensureTwentyUniqueInterviewQA(resume: NonNullable<Awaited<ReturnType<ty
   let index = 1;
   while (unique.length < 20) {
     const question = `Role-fit follow-up ${index}: how would you convert your resume strengths into measurable outcomes in this role?`;
-    const key = questionKey(question);
-    if (!seen.has(key)) {
-      seen.add(key);
+    const answer = `For follow-up ${index}, I would map one resume project to a top JD requirement, ship a scoped deliverable, and track impact using clear success metrics agreed with stakeholders.`;
+    const questionId = questionKey(question);
+    const answerId = answerKey(answer);
+    if (!seenQuestions.has(questionId) && !seenAnswers.has(answerId)) {
+      seenQuestions.add(questionId);
+      seenAnswers.add(answerId);
       unique.push({
         question,
-        answer: "Use one specific resume example and map it to a concrete deliverable from the JD."
+        answer
       });
     }
     index += 1;

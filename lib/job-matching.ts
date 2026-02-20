@@ -302,6 +302,14 @@ function questionKey(question: string) {
     .trim();
 }
 
+function answerKey(answer: string) {
+  return answer
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function quoteSnippet(text: string, max = 72) {
   const cleaned = cleanText(text);
   if (!cleaned) return "";
@@ -334,14 +342,17 @@ function buildFallbackInterviewQA(input: JobMatchInput, missingKeywords: string[
   const topSkillGap = requiredSkillsGap.map((item) => cleanText(item)).filter(Boolean).slice(0, 5);
   const qa: InterviewQAItem[] = [];
   const seenQuestions = new Set<string>();
+  const seenAnswers = new Set<string>();
 
   const add = (question: string, answer: string) => {
     const normalizedQuestion = cleanText(question);
     const normalizedAnswer = cleanText(answer);
     if (!normalizedQuestion || !normalizedAnswer) return;
-    const key = questionKey(normalizedQuestion);
-    if (!key || seenQuestions.has(key)) return;
-    seenQuestions.add(key);
+    const questionId = questionKey(normalizedQuestion);
+    const answerId = answerKey(normalizedAnswer);
+    if (!questionId || seenQuestions.has(questionId) || !answerId || seenAnswers.has(answerId)) return;
+    seenQuestions.add(questionId);
+    seenAnswers.add(answerId);
     qa.push({
       question: normalizedQuestion,
       answer: normalizedAnswer
@@ -396,7 +407,7 @@ function buildFallbackInterviewQA(input: JobMatchInput, missingKeywords: string[
   for (const gap of topSkillGap) {
     add(
       `How would you close the gap in ${gap} during your first 30-60 days?`,
-      "My first 30-60 day plan would include three tracks: targeted skill ramp-up, a scoped production deliverable, and recurring checkpoints with stakeholders. I would define success metrics early, ship a practical use case, and iteratively strengthen depth until the capability becomes fully reliable."
+      `For ${gap}, my first 30-60 day plan would include targeted ramp-up, a scoped production deliverable, and weekly checkpoints with stakeholders. I would define success metrics early, ship a practical use case mapped to ${gap}, and iterate based on measurable feedback until the capability is production-ready.`
     );
   }
 
@@ -429,7 +440,7 @@ function buildFallbackInterviewQA(input: JobMatchInput, missingKeywords: string[
   for (const question of fillerQuestions) {
     add(
       question,
-      "I answer these situations by tying decisions to business impact, showing ownership, and citing specific results from past projects. I focus on clear tradeoffs, execution discipline, and communication that keeps stakeholders aligned through delivery."
+      `For this scenario (${quoteSnippet(question, 46)}), I focus on business impact first, then execution clarity. I share a concrete project example, explain key tradeoffs, and show how I aligned stakeholders while maintaining delivery quality under constraints.`
     );
   }
 
@@ -447,7 +458,7 @@ function buildFallbackInterviewQA(input: JobMatchInput, missingKeywords: string[
   for (const question of reserveQuestions) {
     add(
       question,
-      "I would connect this directly to similar responsibilities I have handled, explain my execution approach, and show how I would deliver measurable outcomes aligned with the team's priorities."
+      `For ${quoteSnippet(question, 44).toLowerCase()}, I would map my prior delivery experience to this team's goals, define measurable success criteria up front, and execute through phased milestones with transparent stakeholder communication.`
     );
   }
 
@@ -455,7 +466,7 @@ function buildFallbackInterviewQA(input: JobMatchInput, missingKeywords: string[
   while (qa.length < 20) {
     add(
       `Role-fit scenario ${fillerIndex}: how would you apply your resume strengths to deliver early impact in ${role}?`,
-      `I would start with a scoped problem aligned to the highest-priority requirement, apply proven methods from my past delivery work, and ship a concrete improvement that can be measured quickly. Then I would iterate with stakeholder feedback to expand impact over the quarter.`
+      `In role-fit scenario ${fillerIndex}, I would start with a scoped problem aligned to a top JD priority, apply methods proven in my past projects, and ship a measurable improvement quickly. I would then expand impact through stakeholder feedback loops and quarterly targets.`
     );
     fillerIndex += 1;
   }
@@ -472,6 +483,7 @@ function normalizeInterviewQA(
   const rows = Array.isArray(value) ? value : [];
   const normalized: InterviewQAItem[] = [];
   const seenQuestions = new Set<string>();
+  const seenAnswers = new Set<string>();
 
   for (const row of rows) {
     if (!row || typeof row !== "object") continue;
@@ -480,9 +492,11 @@ function normalizeInterviewQA(
     const answer = cleanText(entry.answer);
     if (!question || !answer) continue;
     if (isWeakQuestion(question) || isWeakAnswer(answer)) continue;
-    const key = questionKey(question);
-    if (!key || seenQuestions.has(key)) continue;
-    seenQuestions.add(key);
+    const questionId = questionKey(question);
+    const answerId = answerKey(answer);
+    if (!questionId || seenQuestions.has(questionId) || !answerId || seenAnswers.has(answerId)) continue;
+    seenQuestions.add(questionId);
+    seenAnswers.add(answerId);
     normalized.push({
       question,
       answer: answer.length > 520 ? `${answer.slice(0, 517).trim()}...` : answer
@@ -493,10 +507,12 @@ function normalizeInterviewQA(
   if (normalized.length < 20) {
     const fallback = buildFallbackInterviewQA(input, missingKeywords, requiredSkillsGap);
     for (const qa of fallback) {
-      const key = questionKey(qa.question);
-      if (!key || seenQuestions.has(key)) continue;
+      const questionId = questionKey(qa.question);
+      const answerId = answerKey(qa.answer);
+      if (!questionId || seenQuestions.has(questionId) || !answerId || seenAnswers.has(answerId)) continue;
       if (isWeakQuestion(qa.question) || isWeakAnswer(qa.answer)) continue;
-      seenQuestions.add(key);
+      seenQuestions.add(questionId);
+      seenAnswers.add(answerId);
       normalized.push(qa);
       if (normalized.length >= 20) break;
     }
@@ -507,15 +523,18 @@ function normalizeInterviewQA(
 
 function mergeInterviewQA(primary: InterviewQAItem[], secondary: InterviewQAItem[]) {
   const merged: InterviewQAItem[] = [];
-  const seen = new Set<string>();
+  const seenQuestions = new Set<string>();
+  const seenAnswers = new Set<string>();
 
   for (const item of [...primary, ...secondary]) {
     const question = cleanText(item.question);
     const answer = cleanText(item.answer);
-    const key = questionKey(question);
-    if (!question || !answer || !key || seen.has(key)) continue;
+    const questionId = questionKey(question);
+    const answerId = answerKey(answer);
+    if (!question || !answer || !questionId || seenQuestions.has(questionId) || !answerId || seenAnswers.has(answerId)) continue;
     if (isWeakQuestion(question) || isWeakAnswer(answer)) continue;
-    seen.add(key);
+    seenQuestions.add(questionId);
+    seenAnswers.add(answerId);
     merged.push({ question, answer });
     if (merged.length >= 20) break;
   }
