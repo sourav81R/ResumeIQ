@@ -179,7 +179,7 @@ export default function GlobalLoadingOverlay() {
     return () => {
       window.fetch = originalFetch;
     };
-  }, [startRoutePending]);
+  }, []);
 
   useEffect(() => {
     const originalPushState = window.history.pushState;
@@ -268,7 +268,7 @@ export default function GlobalLoadingOverlay() {
       window.removeEventListener("popstate", onPopState);
       document.removeEventListener("click", onClick, true);
     };
-  }, []);
+  }, [startRoutePending]);
 
   useEffect(() => {
     stopRoutePending();
