@@ -12,6 +12,12 @@ type OptimizedResumePreviewProps = {
   template: ResumeTemplate;
 };
 
+function normalizeBulletItem(text: string) {
+  return String(text || "")
+    .replace(/^[\s\-*•]+/, "")
+    .trim();
+}
+
 export default function OptimizedResumePreview({ content, template }: OptimizedResumePreviewProps) {
   const compact = compactOptimizedResumeContent(content);
   const showPhotoSlot = template.photoMode === "with-photo" || Boolean(compact.header.photoUrl);
@@ -204,11 +210,15 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
                     {[item.startDate, item.endDate].filter(Boolean).join(" - ")}
                   </p>
                 </div>
-                {item.details.map((detail, detailIndex) => (
-                  <p key={`${index}-${detailIndex}`} className="ml-2 mt-0.5">
-                    - {detail}
-                  </p>
-                ))}
+                {item.details.length ? (
+                  <ul className="mt-1 list-disc pl-5">
+                    {item.details.map((detail, detailIndex) => (
+                      <li key={`${index}-${detailIndex}`} className="mt-0.5">
+                        {normalizeBulletItem(detail)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
               </article>
             ))}
           </div>

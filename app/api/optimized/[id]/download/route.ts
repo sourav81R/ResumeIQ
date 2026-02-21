@@ -16,6 +16,12 @@ type Params = {
   };
 };
 
+function normalizeBulletItem(text: string) {
+  return String(text || "")
+    .replace(/^[\s\-*•]+/, "")
+    .trim();
+}
+
 function splitTokenByWidth(token: string, maxWidth: number, font: PDFFont, size: number) {
   if (!token) {
     return [];
@@ -382,7 +388,9 @@ function canFitOnSinglePage(
         drawWrapped(exp.location, { size: RESUME_LAYOUT.font.meta, lineGap: RESUME_LAYOUT.lineGap.meta });
       }
       for (const bullet of exp.bullets) {
-        drawBullet(bullet, {
+        const normalizedBullet = normalizeBulletItem(bullet);
+        if (!normalizedBullet) continue;
+        drawBullet(normalizedBullet, {
           width: maxWidth - 7 * scale,
           size: RESUME_LAYOUT.font.bodyTight,
           lineGap: RESUME_LAYOUT.lineGap.tight
@@ -411,7 +419,9 @@ function canFitOnSinglePage(
         });
       }
       for (const bullet of project.bullets) {
-        drawBullet(bullet, {
+        const normalizedBullet = normalizeBulletItem(bullet);
+        if (!normalizedBullet) continue;
+        drawBullet(normalizedBullet, {
           width: maxWidth - 7 * scale,
           size: 9,
           lineGap: RESUME_LAYOUT.lineGap.tight
@@ -434,7 +444,9 @@ function canFitOnSinglePage(
       const line = [edu.degree, edu.institution].filter(Boolean).join(" | ") || "Degree | Institution";
       drawLeftRight(line, dates, 9.3, true);
       for (const detail of edu.details) {
-        drawBullet(detail, {
+        const normalizedDetail = normalizeBulletItem(detail);
+        if (!normalizedDetail) continue;
+        drawBullet(normalizedDetail, {
           width: maxWidth - 7 * scale,
           size: 8.8,
           lineGap: RESUME_LAYOUT.lineGap.meta
@@ -447,7 +459,9 @@ function canFitOnSinglePage(
   if (content.certifications.length) {
     drawSectionTitle("CERTIFICATIONS");
     for (const certification of content.certifications) {
-      drawBullet(certification, {
+      const normalizedCertification = normalizeBulletItem(certification);
+      if (!normalizedCertification) continue;
+      drawBullet(normalizedCertification, {
         width: maxWidth - 7 * scale,
         size: 9,
         lineGap: RESUME_LAYOUT.lineGap.tight
@@ -804,7 +818,9 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
         drawWrapped(exp.location, { size: RESUME_LAYOUT.font.meta, color: mutedColor, lineGap: RESUME_LAYOUT.lineGap.meta });
       }
       for (const bullet of exp.bullets) {
-        drawBulletLine(bullet, {
+        const normalizedBullet = normalizeBulletItem(bullet);
+        if (!normalizedBullet) continue;
+        drawBulletLine(normalizedBullet, {
           x: margin + 7 * scale,
           width: maxWidth - 7 * scale,
           size: RESUME_LAYOUT.font.bodyTight,
@@ -837,7 +853,9 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
         });
       }
       for (const bullet of project.bullets) {
-        drawBulletLine(bullet, {
+        const normalizedBullet = normalizeBulletItem(bullet);
+        if (!normalizedBullet) continue;
+        drawBulletLine(normalizedBullet, {
           x: margin + 7 * scale,
           width: maxWidth - 7 * scale,
           size: 9,
@@ -863,7 +881,9 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
       const line = [edu.degree, edu.institution].filter(Boolean).join(" | ") || "Degree | Institution";
       drawLeftRight(line, dates, 9.3, true);
       for (const detail of edu.details) {
-        drawBulletLine(detail, {
+        const normalizedDetail = normalizeBulletItem(detail);
+        if (!normalizedDetail) continue;
+        drawBulletLine(normalizedDetail, {
           x: margin + 7 * scale,
           width: maxWidth - 7 * scale,
           size: 8.8,
@@ -877,7 +897,9 @@ async function buildPdf(version: NonNullable<Awaited<ReturnType<typeof getOptimi
   if (content.certifications.length) {
     drawSectionTitle("CERTIFICATIONS");
     for (const certification of content.certifications) {
-      drawBulletLine(certification, {
+      const normalizedCertification = normalizeBulletItem(certification);
+      if (!normalizedCertification) continue;
+      drawBulletLine(normalizedCertification, {
         x: margin + 7 * scale,
         width: maxWidth - 7 * scale,
         size: 9,
