@@ -16,6 +16,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { JOB_ROLES } from "@/lib/constants";
+import { normalizeUiError } from "@/lib/ui-error";
 
 export default function UploadPageClient() {
   const router = useRouter();
@@ -133,7 +134,7 @@ export default function UploadPageClient() {
 
                   router.push(`/report/${uploadData.resumeId}`);
                 } catch (err) {
-                  setError(err instanceof Error ? err.message : "Something went wrong.");
+                  setError(normalizeUiError(err, "analysis"));
                 } finally {
                   setLoading(false);
                   setStatus("");

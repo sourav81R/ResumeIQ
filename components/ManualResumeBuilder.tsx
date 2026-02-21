@@ -4,6 +4,7 @@ import NextImage from "next/image";
 import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Download, Plus, Save, Trash2, UserRound } from "lucide-react";
 
+import LoadingSpinner from "@/components/LoadingSpinner";
 import OptimizedResumePreview from "@/components/OptimizedResumePreview";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -195,6 +196,7 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
   const [resumeId, setResumeId] = useState("");
   const [versionId, setVersionId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const isDraftHydrated = useRef(false);
@@ -254,6 +256,7 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
     () => Boolean(content.header.name.trim()) && Boolean(content.header.role.trim()),
     [content.header.name, content.header.role]
   );
+  const isBusy = saving || downloading;
 
   const handlePhotoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -326,13 +329,21 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
   };
 
   const handleDownloadPdf = async () => {
-    const id = versionId || (await saveResume());
-    if (!id) {
-      return;
-    }
+    try {
+      setDownloading(true);
+      setError("");
+      setStatus("Preparing PDF...");
 
-    window.open(`/api/optimized/${id}/download?ts=${Date.now()}`, "_blank", "noopener,noreferrer");
-    setStatus("PDF download started.");
+      const id = versionId || (await saveResume());
+      if (!id) {
+        return;
+      }
+
+      window.open(`/api/optimized/${id}/download?ts=${Date.now()}`, "_blank", "noopener,noreferrer");
+      setStatus("PDF download started.");
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -342,18 +353,23 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className="font-display text-xl">Resume Builder</CardTitle>
             <div className="flex items-center gap-2">
-              <Button type="button" variant="outline" className="h-10 rounded-xl bg-white" onClick={saveResume} disabled={saving}>
+              <Button type="button" variant="outline" className="h-10 rounded-xl bg-white" onClick={saveResume} disabled={isBusy}>
                 <Save className="mr-2 h-4 w-4" />
-                {resumeId ? "Save Changes" : "Create Resume"}
+                {saving ? "Saving..." : resumeId ? "Save Changes" : "Create Resume"}
               </Button>
-              <Button type="button" className="h-10 rounded-xl" onClick={handleDownloadPdf} disabled={saving}>
+              <Button type="button" className="h-10 rounded-xl" onClick={handleDownloadPdf} disabled={isBusy}>
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                {downloading ? "Preparing..." : "Download PDF"}
               </Button>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {isBusy ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+              <LoadingSpinner label={downloading ? "Preparing PDF..." : resumeId ? "Saving resume..." : "Creating resume..."} />
+            </div>
+          ) : null}
           {error ? <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
           {status ? <p className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-cyan-800">{status}</p> : null}
           <p className="text-xs text-slate-600">Draft autosaves in this browser, so refresh/offline won&apos;t lose your edits.</p>

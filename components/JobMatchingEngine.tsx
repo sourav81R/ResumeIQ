@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { normalizeUiError } from "@/lib/ui-error";
 import { JobMatchResult } from "@/types";
 
 type JobMatchingEngineProps = {
@@ -71,7 +72,7 @@ export default function JobMatchingEngine({ resumeId, jobRole, initialJobMatch }
       setStatus("Matching complete. Interview Q&A generated.");
     } catch (err) {
       setStatus("");
-      setError(err instanceof Error ? err.message : "Matching failed.");
+      setError(normalizeUiError(err, "job-match"));
     } finally {
       setLoading(false);
     }

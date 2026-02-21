@@ -88,6 +88,98 @@ h4 {
   }
 }
 
+@keyframes loading-orbit {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-orbit-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes loading-core {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes loading-shimmer-x {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+@keyframes loading-progress {
+  0% {
+    transform: translateX(-125%);
+  }
+  100% {
+    transform: translateX(225%);
+  }
+}
+
+@keyframes loading-dot {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  50% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
+.loading-orbit {
+  animation: loading-orbit 1.15s linear infinite;
+}
+
+.loading-orbit-reverse {
+  animation: loading-orbit-reverse 1.7s linear infinite;
+}
+
+.loading-core {
+  animation: loading-core 1.6s ease-in-out infinite;
+}
+
+.loading-shimmer-line {
+  animation: loading-shimmer-x 1.35s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent 0%, rgba(20, 184, 166, 0.85) 48%, transparent 100%);
+}
+
+.loading-progress-bar {
+  animation: loading-progress 1.15s ease-in-out infinite;
+}
+
+.loading-dot {
+  animation: loading-dot 1s ease-in-out infinite;
+}
+
+.loading-title-shimmer {
+  background: linear-gradient(112deg, #0f172a 8%, #0f766e 48%, #0369a1 88%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
 .float-soft {
   animation: float-soft 6s ease-in-out infinite;
 }

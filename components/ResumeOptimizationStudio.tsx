@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { optimizedResumeContentToPlainText } from "@/lib/optimized-resume-render";
 import { buildTemplatePreviewContent } from "@/lib/template-preview-data";
+import { normalizeUiError } from "@/lib/ui-error";
 import { OptimizedResumeContent, OptimizedResumeVersion, ResumeTemplate } from "@/types";
 
 type ResumeOptimizationStudioProps = {
@@ -493,7 +494,7 @@ export default function ResumeOptimizationStudio({
       setStatus("Optimized resume generated.");
     } catch (err) {
       setStatus("");
-      setError(err instanceof Error ? err.message : "Generation failed.");
+      setError(normalizeUiError(err, "optimization"));
     } finally {
       setLoading(false);
     }

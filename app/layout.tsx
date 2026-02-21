@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Sora } from "next/font/google";
 
 import { AuthProvider } from "@/components/AuthProvider";
+import GlobalLoadingOverlay from "@/components/GlobalLoadingOverlay";
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Navbar />
           <main className="flex-1 pb-4 sm:pb-6">{children}</main>
           <SiteFooter />
+          <GlobalLoadingOverlay />
         </AuthProvider>
       </body>
     </html>
