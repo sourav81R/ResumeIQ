@@ -93,7 +93,7 @@ export default async function DashboardPage() {
             <p className="mt-2 max-w-xl text-sm text-slate-600">
               Start from a professional template and build your first ATS-ready resume directly inside ResumeIQ.
             </p>
-            <Button asChild className="mt-5 h-12 px-6 text-base font-semibold">
+            <Button asChild className="mt-5 h-auto min-h-12 w-full max-w-full whitespace-normal px-4 py-3 text-center text-base font-semibold leading-tight sm:h-12 sm:w-auto sm:whitespace-nowrap sm:px-6 sm:py-2">
               <Link href="/templates">Select a Template and Build Your First Resume</Link>
             </Button>
           </CardContent>

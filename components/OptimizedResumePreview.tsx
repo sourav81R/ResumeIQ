@@ -20,14 +20,17 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
   const links = compact.header.links.join(" | ");
   const pageStyle = {
     maxWidth: `${RESUME_LAYOUT.pageWidth}px`,
-    padding: `${RESUME_LAYOUT.margin}px`,
+    padding: "clamp(16px, 5vw, 34px)",
     fontFamily: "Helvetica, Arial, sans-serif"
   } as const;
 
   return (
-    <div className="mx-auto w-full rounded-xl border border-slate-300 bg-white shadow-sm" style={pageStyle}>
+    <div className="mx-auto w-full max-w-full overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm" style={pageStyle}>
       <header className="border-b border-slate-300 pb-3">
-        <div className={showPhotoSlot ? "flex items-start justify-between" : ""} style={{ gap: `${RESUME_LAYOUT.headerGap}px` }}>
+        <div
+          className={showPhotoSlot ? "flex flex-col sm:flex-row sm:items-start sm:justify-between" : ""}
+          style={{ gap: `${RESUME_LAYOUT.headerGap}px` }}
+        >
           <div className="min-w-0 flex-1">
             <h3
               className="font-display font-bold leading-tight"
@@ -39,7 +42,7 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
               {compact.header.role || "Professional"}
             </p>
             {subtitle ? (
-              <p className="mt-2 text-slate-600" style={{ fontSize: `${RESUME_LAYOUT.font.contact}px` }}>
+              <p className="mt-2 break-words text-slate-600" style={{ fontSize: `${RESUME_LAYOUT.font.contact}px` }}>
                 {subtitle}
               </p>
             ) : null}
@@ -57,12 +60,12 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
                 width={RESUME_LAYOUT.photoSize}
                 height={RESUME_LAYOUT.photoSize}
                 unoptimized
-                className="flex-shrink-0 border border-slate-300 object-cover"
+                className="flex-shrink-0 self-start border border-slate-300 object-cover"
                 style={{ width: `${RESUME_LAYOUT.photoSize}px`, height: `${RESUME_LAYOUT.photoSize}px` }}
               />
             ) : (
               <div
-                className="flex flex-shrink-0 items-center justify-center border border-slate-300 bg-slate-100"
+                className="flex flex-shrink-0 self-start items-center justify-center border border-slate-300 bg-slate-100"
                 style={{ width: `${RESUME_LAYOUT.photoSize}px`, height: `${RESUME_LAYOUT.photoSize}px` }}
               >
                 <UserRound className="h-8 w-8 text-slate-500" />
@@ -114,11 +117,11 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
                 className="text-slate-800"
                 style={{ fontSize: `${RESUME_LAYOUT.font.bodyTight}px`, lineHeight: 1.34 }}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <p className="font-semibold text-slate-900">
                     {[item.role, item.company].filter(Boolean).join(" | ") || "Role | Company"}
                   </p>
-                  <p className="whitespace-nowrap text-slate-600" style={{ fontSize: `${RESUME_LAYOUT.font.meta}px` }}>
+                  <p className="text-slate-600 sm:whitespace-nowrap" style={{ fontSize: `${RESUME_LAYOUT.font.meta}px` }}>
                     {[item.startDate, item.endDate].filter(Boolean).join(" - ")}
                   </p>
                 </div>
@@ -193,11 +196,11 @@ export default function OptimizedResumePreview({ content, template }: OptimizedR
                 className="text-slate-800"
                 style={{ fontSize: `${RESUME_LAYOUT.font.bodyTight}px`, lineHeight: 1.34 }}
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
                   <p className="font-semibold text-slate-900">
                     {[item.degree, item.institution].filter(Boolean).join(" | ") || "Degree | Institution"}
                   </p>
-                  <p className="whitespace-nowrap text-slate-600" style={{ fontSize: `${RESUME_LAYOUT.font.meta}px` }}>
+                  <p className="text-slate-600 sm:whitespace-nowrap" style={{ fontSize: `${RESUME_LAYOUT.font.meta}px` }}>
                     {[item.startDate, item.endDate].filter(Boolean).join(" - ")}
                   </p>
                 </div>

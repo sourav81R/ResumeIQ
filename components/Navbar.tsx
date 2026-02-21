@@ -29,7 +29,7 @@ export default function Navbar() {
   const userInitial = greetingName.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-2 z-50 px-2.5 sm:px-3">
+    <header className="z-50 px-2.5 sm:px-3 md:sticky md:top-2">
       <div className="container">
         <div className="flex h-14 w-full items-center justify-between gap-2 rounded-[22px] border border-white/65 bg-[linear-gradient(120deg,rgba(6,25,55,0.9),rgba(5,40,73,0.89),rgba(15,118,110,0.76))] px-3 shadow-[0_14px_38px_rgba(3,26,58,0.34)] backdrop-blur-xl sm:h-16 sm:px-4">
           <Link

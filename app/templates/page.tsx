@@ -14,16 +14,16 @@ export default async function TemplatesPage() {
   }
 
   return (
-    <div className="container py-6 sm:py-8 md:py-10">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="container overflow-x-clip py-6 sm:py-8 md:py-10">
+      <div className="mb-5 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-700">Template Gallery</p>
           <h1 className="font-display text-2xl font-bold text-slate-900 sm:text-3xl">Template Selection</h1>
           <p className="mt-1 text-sm text-slate-600 sm:text-base">
             Pick a professional template and start building your first resume.
           </p>
         </div>
-        <Button asChild variant="outline" className="bg-white">
+        <Button asChild variant="outline" className="w-full bg-white sm:w-auto">
           <Link href="/dashboard">Back to Dashboard</Link>
         </Button>
       </div>

@@ -46,10 +46,10 @@ function TemplateThumbnail({
           ) : null}
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold text-slate-900">{previewContent.header.name}</p>
-            <p className="truncate text-[11px] text-slate-600">{subtitle || "Professional resume layout"}</p>
+            <p className="line-clamp-2 text-[11px] leading-4 text-slate-600">{subtitle || "Professional resume layout"}</p>
           </div>
         </div>
-        <p className="text-[11px] leading-4 text-slate-600">{highlight.slice(0, 130)}</p>
+        <p className="line-clamp-2 break-words text-[11px] leading-4 text-slate-600">{highlight.slice(0, 130)}</p>
       </div>
     </div>
   );
@@ -82,12 +82,12 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
-      <Card className="bg-white/92">
-        <CardHeader className="pb-3">
+    <div className="grid min-w-0 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,460px)]">
+      <Card className="min-w-0 bg-white/92">
+        <CardHeader className="p-4 pb-3 sm:p-6 sm:pb-3">
           <CardTitle className="font-display text-xl text-slate-900">Choose a Template</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2">
+        <CardContent className="grid gap-3 p-4 pt-0 sm:grid-cols-2 sm:p-6 sm:pt-0">
           {templates.map((template) => {
             const previewContent = previewMap[template.id];
             const isSelected = template.id === selectedTemplateId;
@@ -96,7 +96,7 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
               <article
                 key={template.id}
                 className={cn(
-                  "rounded-xl border p-3 transition",
+                  "min-w-0 overflow-hidden rounded-xl border p-3 transition",
                   isSelected
                     ? "border-cyan-300 bg-cyan-50/55 shadow-[0_10px_24px_rgba(8,145,178,0.12)]"
                     : "border-slate-200 bg-white"
@@ -105,8 +105,13 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
                 <TemplateThumbnail template={template} previewContent={previewContent} />
                 <h3 className="font-semibold text-slate-900">{template.name}</h3>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{template.description}</p>
-                <div className="mt-3 flex items-center gap-2">
-                  <Button type="button" variant={isSelected ? "default" : "outline"} className="h-9 px-3 text-xs" onClick={() => setSelectedTemplateId(template.id)}>
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <Button
+                    type="button"
+                    variant={isSelected ? "default" : "outline"}
+                    className="h-9 w-full px-3 text-xs sm:w-auto"
+                    onClick={() => setSelectedTemplateId(template.id)}
+                  >
                     {isSelected ? (
                       <>
                         <CheckCircle2 className="mr-1.5 h-4 w-4" />
@@ -116,7 +121,7 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
                       "Preview"
                     )}
                   </Button>
-                  <Button asChild className="h-9 px-3 text-xs">
+                  <Button asChild className="h-9 w-full px-3 text-xs sm:w-auto">
                     <Link href={`/resume-builder?templateId=${encodeURIComponent(template.id)}`}>
                       Use Template
                       <ArrowRight className="ml-1.5 h-4 w-4" />
@@ -129,17 +134,25 @@ export default function TemplateSelectionClient({ templates }: TemplateSelection
         </CardContent>
       </Card>
 
-      <Card className="bg-[linear-gradient(180deg,rgba(236,254,255,0.95)_0%,rgba(255,255,255,0.92)_100%)]">
-        <CardHeader className="pb-2">
+      <Card className="min-w-0 bg-[linear-gradient(180deg,rgba(236,254,255,0.95)_0%,rgba(255,255,255,0.92)_100%)]">
+        <CardHeader className="p-4 pb-2 sm:p-6 sm:pb-2">
           <CardTitle className="font-display text-lg text-slate-900">
             Live Template Preview
-            {selectedTemplate ? <span className="ml-2 text-cyan-700">({selectedTemplate.name})</span> : null}
+            {selectedTemplate ? (
+              <span className="mt-1 block text-sm text-cyan-700 sm:ml-2 sm:inline sm:text-base">
+                ({selectedTemplate.name})
+              </span>
+            ) : null}
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-3 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
           {selectedTemplate && selectedPreview ? (
             <>
-              <OptimizedResumePreview content={selectedPreview} template={selectedTemplate} />
+              <div className="min-w-0">
+                <div className="min-w-0">
+                  <OptimizedResumePreview content={selectedPreview} template={selectedTemplate} />
+                </div>
+              </div>
               <div className="rounded-lg border border-cyan-200 bg-white/80 p-3 text-sm text-slate-700">
                 <p className="flex items-start gap-2">
                   <Sparkles className="mt-0.5 h-4 w-4 flex-shrink-0 text-cyan-700" />
