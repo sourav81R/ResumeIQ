@@ -161,8 +161,10 @@ export default async function ReportPage({ params }: PageProps) {
 
       <ResumeOptimizationStudio
         resumeId={resume.id}
+        jobRole={resume.jobRole}
         originalAtsScore={resume.atsScore}
         originalResumeText={resume.resumeText}
+        initialJobDescription={resume.jobMatch?.jobDescriptionText}
       />
     </div>
   );

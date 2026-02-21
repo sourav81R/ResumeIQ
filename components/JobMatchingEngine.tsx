@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, FileUp, Loader2, ScanSearch } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { dispatchJobDescriptionPreviewUpdate } from "@/lib/job-description-preview";
 import { normalizeUiError } from "@/lib/ui-error";
 import { JobMatchResult } from "@/types";
 
@@ -34,6 +35,14 @@ export default function JobMatchingEngine({ resumeId, jobRole, initialJobMatch }
 
   const hasResult = Boolean(result);
   const qAPreview = useMemo(() => result?.interviewQA.slice(0, 5) || [], [result]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      dispatchJobDescriptionPreviewUpdate(jobDescriptionText.trim());
+    }, 220);
+
+    return () => window.clearTimeout(timeout);
+  }, [jobDescriptionText]);
 
   const handleAnalyze = async () => {
     setError("");

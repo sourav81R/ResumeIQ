@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { JOB_DESCRIPTION_PREVIEW_EVENT, JobDescriptionPreviewDetail } from "@/lib/job-description-preview";
 import { optimizedResumeContentToPlainText } from "@/lib/optimized-resume-render";
 import { buildTemplatePreviewContent } from "@/lib/template-preview-data";
 import { normalizeUiError } from "@/lib/ui-error";
@@ -29,8 +30,10 @@ import { OptimizedResumeContent, OptimizedResumeVersion, ResumeTemplate } from "
 
 type ResumeOptimizationStudioProps = {
   resumeId: string;
+  jobRole: string;
   originalAtsScore: number;
   originalResumeText?: string;
+  initialJobDescription?: string;
 };
 
 type TemplateMode = ResumeTemplate["photoMode"];
@@ -40,6 +43,157 @@ const MAX_EXPERIENCE_ITEMS = 12;
 const MAX_PROJECT_ITEMS = 12;
 const MAX_EDUCATION_ITEMS = 8;
 const MAX_CERTIFICATION_ITEMS = 15;
+
+const JD_STOPWORDS = new Set([
+  "and",
+  "the",
+  "for",
+  "with",
+  "from",
+  "this",
+  "that",
+  "you",
+  "your",
+  "will",
+  "must",
+  "have",
+  "has",
+  "our",
+  "their",
+  "role",
+  "position",
+  "job",
+  "team",
+  "teams",
+  "using",
+  "into",
+  "over",
+  "across",
+  "ability",
+  "required",
+  "requirements",
+  "experience",
+  "skills"
+]);
+
+function toTitleToken(token: string) {
+  if (/^(sql|api|aws|gcp|crm|erp|saas|ai|ml|nlp|kpi|okrs?)$/i.test(token)) {
+    return token.toUpperCase();
+  }
+
+  return token
+    .split(/[- ]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function mergeUniqueItems(first: string[], second: string[], max: number) {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  for (const value of [...first, ...second]) {
+    const normalized = String(value || "").trim();
+    if (!normalized) continue;
+
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+
+    seen.add(key);
+    merged.push(normalized);
+
+    if (merged.length >= max) {
+      break;
+    }
+  }
+
+  return merged;
+}
+
+function extractRoleFromJobDescription(jobDescriptionText: string, fallbackRole: string) {
+  const text = String(jobDescriptionText || "");
+
+  const labeledRole = text.match(/\b(?:job\s*title|position|role)\s*[:\-]\s*([^\n.,;]{3,70})/i)?.[1];
+  if (labeledRole) {
+    return labeledRole.trim();
+  }
+
+  const firstLine = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find(Boolean);
+
+  if (
+    firstLine &&
+    firstLine.length <= 72 &&
+    /\b(engineer|developer|analyst|manager|designer|specialist|coordinator|consultant|scientist|architect|lead)\b/i.test(
+      firstLine
+    )
+  ) {
+    return firstLine;
+  }
+
+  return fallbackRole;
+}
+
+function extractJobKeywords(jobDescriptionText: string, max = 8) {
+  const candidates = String(jobDescriptionText || "")
+    .toLowerCase()
+    .split(/[^a-z0-9+#.]+/i)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length >= 4 && !JD_STOPWORDS.has(entry));
+
+  return Array.from(new Set(candidates)).slice(0, max);
+}
+
+function applyJobDescriptionToPreview(
+  content: OptimizedResumeContent,
+  jobDescriptionText: string,
+  fallbackRole: string
+) {
+  const text = String(jobDescriptionText || "").trim();
+  if (text.length < 40) {
+    return content;
+  }
+
+  const role = extractRoleFromJobDescription(text, fallbackRole);
+  const keywords = extractJobKeywords(text).map(toTitleToken);
+  const topKeywords = keywords.slice(0, 3);
+
+  if (!role && !keywords.length) {
+    return content;
+  }
+
+  const next = cloneContent(content);
+
+  if (role) {
+    next.header.role = role;
+  }
+
+  if (topKeywords.length) {
+    const roleLabel = role || next.header.role || "target role";
+    next.summary = `Targeting ${roleLabel} opportunities with strong focus on ${topKeywords.join(", ")} and measurable business outcomes.`;
+    next.skills.core = mergeUniqueItems(topKeywords, next.skills.core, 20);
+    next.skills.tools = mergeUniqueItems(keywords.slice(0, 5), next.skills.tools, 20);
+
+    if (next.experience[0]) {
+      next.experience[0].bullets = mergeUniqueItems(
+        [
+          `Aligned delivery priorities to job-description requirements around ${topKeywords.join(", ")}.`,
+          "Executed cross-functional improvements with clear, measurable outcomes."
+        ],
+        next.experience[0].bullets,
+        8
+      );
+    }
+
+    if (next.projects[0]) {
+      next.projects[0].tech = mergeUniqueItems(keywords.slice(0, 5), next.projects[0].tech, 8);
+    }
+  }
+
+  return next;
+}
 
 function createEmptyExperience(): OptimizedResumeContent["experience"][number] {
   return {
@@ -189,8 +343,10 @@ function TemplateThumbnail({
 
 export default function ResumeOptimizationStudio({
   resumeId,
+  jobRole,
   originalAtsScore,
-  originalResumeText
+  originalResumeText,
+  initialJobDescription
 }: ResumeOptimizationStudioProps) {
   const [templates, setTemplates] = useState<ResumeTemplate[]>([]);
   const [versions, setVersions] = useState<OptimizedResumeVersion[]>([]);
@@ -203,6 +359,18 @@ export default function ResumeOptimizationStudio({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const [jobDescriptionSignal, setJobDescriptionSignal] = useState(initialJobDescription || "");
+
+  useEffect(() => {
+    const onJobDescriptionUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<JobDescriptionPreviewDetail>).detail;
+      const nextText = String(detail?.jobDescriptionText || "").trim();
+      setJobDescriptionSignal(nextText);
+    };
+
+    window.addEventListener(JOB_DESCRIPTION_PREVIEW_EVENT, onJobDescriptionUpdated);
+    return () => window.removeEventListener(JOB_DESCRIPTION_PREVIEW_EVENT, onJobDescriptionUpdated);
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -265,9 +433,13 @@ export default function ResumeOptimizationStudio({
     [selectedTemplateId, templates]
   );
   const templatePreviewMap = useMemo(() => {
-    const entries = templates.map((template) => [template.id, buildTemplatePreviewContent(template)] as const);
+    const entries = templates.map((template) => {
+      const basePreview = buildTemplatePreviewContent(template);
+      const jobAwarePreview = applyJobDescriptionToPreview(basePreview, jobDescriptionSignal, jobRole);
+      return [template.id, jobAwarePreview] as const;
+    });
     return Object.fromEntries(entries) as Record<string, OptimizedResumeContent>;
-  }, [templates]);
+  }, [jobDescriptionSignal, jobRole, templates]);
   const previewTemplate = useMemo(
     () =>
       templates.find((template) => template.id === previewTemplateId) ||
@@ -291,6 +463,13 @@ export default function ResumeOptimizationStudio({
     if (!activeVersion) return null;
     return templates.find((template) => template.id === activeVersion.templateId) || selectedTemplate || templates[0] || null;
   }, [activeVersion, selectedTemplate, templates]);
+  const liveTemplatePreviewContent = useMemo(() => {
+    if (!draftContent) {
+      return null;
+    }
+
+    return applyJobDescriptionToPreview(draftContent, jobDescriptionSignal, jobRole);
+  }, [draftContent, jobDescriptionSignal, jobRole]);
 
   useEffect(() => {
     if (!filteredTemplates.length) return;
@@ -704,6 +883,8 @@ export default function ResumeOptimizationStudio({
                 <p className="mb-2 text-xs text-slate-600">
                   Showing your latest optimized edits in this template style.
                 </p>
+              ) : jobDescriptionSignal.trim().length >= 40 ? (
+                <p className="mb-2 text-xs text-cyan-700">Preview aligned to your latest job description input.</p>
               ) : null}
               <div className="max-h-[420px] overflow-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
                 <OptimizedResumePreview content={latestPreviewContent} template={previewTemplate} />
@@ -849,7 +1030,10 @@ export default function ResumeOptimizationStudio({
               </div>
             </CardHeader>
             <CardContent>
-              <OptimizedResumePreview content={draftContent} template={activeTemplate} />
+              {jobDescriptionSignal.trim().length >= 40 ? (
+                <p className="mb-2 text-xs text-cyan-700">Live preview is being adapted to your latest job description.</p>
+              ) : null}
+              <OptimizedResumePreview content={liveTemplatePreviewContent || draftContent} template={activeTemplate} />
             </CardContent>
           </Card>
         </div>
