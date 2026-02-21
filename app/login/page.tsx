@@ -8,11 +8,11 @@ type LoginPageProps = {
 
 function sanitizeRedirectPath(path: string | undefined) {
   if (!path) {
-    return "/dashboard";
+    return "/";
   }
 
   if (!path.startsWith("/") || path.startsWith("//")) {
-    return "/dashboard";
+    return "/";
   }
 
   return path;

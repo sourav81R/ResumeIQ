@@ -46,7 +46,7 @@ export default async function ResumeBuilderPage({ searchParams }: PageProps) {
         </Button>
       </div>
 
-      <ManualResumeBuilder template={template} />
+      <ManualResumeBuilder template={template} userId={user.uid} />
     </div>
   );
 }

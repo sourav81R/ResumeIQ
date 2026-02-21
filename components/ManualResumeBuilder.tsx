@@ -1,7 +1,7 @@
 "use client";
 
 import NextImage from "next/image";
-import { ChangeEvent, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown, ArrowUp, Download, Plus, Save, Trash2, UserRound } from "lucide-react";
 
 import OptimizedResumePreview from "@/components/OptimizedResumePreview";
@@ -18,6 +18,13 @@ const MAX_EDUCATION_ITEMS = 8;
 const MAX_CERTIFICATION_ITEMS = 15;
 const MAX_PHOTO_FILE_BYTES = 4 * 1024 * 1024;
 const PHOTO_DIMENSION = 256;
+const MANUAL_RESUME_DRAFT_STORAGE_PREFIX = "resumeiq.manual-resume-draft.v1";
+
+type ManualResumeDraft = {
+  content: OptimizedResumeContent;
+  resumeId: string;
+  versionId: string;
+};
 
 function createEmptyExperience(): OptimizedResumeContent["experience"][number] {
   return {
@@ -118,7 +125,7 @@ async function optimizePhotoDataUrl(file: File) {
   return compressed;
 }
 
-function createInitialContent(template: ResumeTemplate): OptimizedResumeContent {
+function createInitialContent(): OptimizedResumeContent {
   return {
     header: {
       name: "",
@@ -141,17 +148,107 @@ function createInitialContent(template: ResumeTemplate): OptimizedResumeContent 
   };
 }
 
+function getDraftStorageKey(userId: string, templateId: string) {
+  return `${MANUAL_RESUME_DRAFT_STORAGE_PREFIX}:${userId}:${templateId}`;
+}
+
+function isOptimizedResumeContentDraft(value: unknown): value is OptimizedResumeContent {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const content = value as Record<string, unknown>;
+  const skills = content.skills as Record<string, unknown> | undefined;
+
+  return Boolean(
+    content.header &&
+      typeof content.header === "object" &&
+      typeof content.summary === "string" &&
+      Array.isArray(content.experience) &&
+      Array.isArray(content.education) &&
+      Array.isArray(content.projects) &&
+      skills &&
+      typeof skills === "object" &&
+      Array.isArray(skills.core) &&
+      Array.isArray(skills.tools) &&
+      Array.isArray(skills.soft) &&
+      Array.isArray(content.certifications)
+  );
+}
+
+function isManualResumeDraft(value: unknown): value is ManualResumeDraft {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const draft = value as Record<string, unknown>;
+  return isOptimizedResumeContentDraft(draft.content);
+}
+
 type ManualResumeBuilderProps = {
   template: ResumeTemplate;
+  userId: string;
 };
 
-export default function ManualResumeBuilder({ template }: ManualResumeBuilderProps) {
-  const [content, setContent] = useState<OptimizedResumeContent>(() => createInitialContent(template));
+export default function ManualResumeBuilder({ template, userId }: ManualResumeBuilderProps) {
+  const [content, setContent] = useState<OptimizedResumeContent>(() => createInitialContent());
   const [resumeId, setResumeId] = useState("");
   const [versionId, setVersionId] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
+  const isDraftHydrated = useRef(false);
+  const draftStorageKey = useMemo(() => getDraftStorageKey(userId, template.id), [template.id, userId]);
+
+  useEffect(() => {
+    isDraftHydrated.current = false;
+
+    try {
+      const rawDraft = window.localStorage.getItem(draftStorageKey);
+      if (!rawDraft) {
+        setContent(createInitialContent());
+        setResumeId("");
+        setVersionId("");
+        return;
+      }
+
+      const parsedDraft = JSON.parse(rawDraft) as unknown;
+      if (!isManualResumeDraft(parsedDraft)) {
+        setContent(createInitialContent());
+        setResumeId("");
+        setVersionId("");
+        return;
+      }
+
+      setContent(parsedDraft.content);
+      setResumeId(typeof parsedDraft.resumeId === "string" ? parsedDraft.resumeId : "");
+      setVersionId(typeof parsedDraft.versionId === "string" ? parsedDraft.versionId : "");
+      setStatus("Restored your local draft.");
+    } catch {
+      setContent(createInitialContent());
+      setResumeId("");
+      setVersionId("");
+    } finally {
+      isDraftHydrated.current = true;
+    }
+  }, [draftStorageKey]);
+
+  useEffect(() => {
+    if (!isDraftHydrated.current) {
+      return;
+    }
+
+    try {
+      const draftPayload: ManualResumeDraft = {
+        content,
+        resumeId,
+        versionId
+      };
+      window.localStorage.setItem(draftStorageKey, JSON.stringify(draftPayload));
+    } catch {
+      // Ignore browser storage quota/privacy failures and keep in-memory editing.
+    }
+  }, [content, draftStorageKey, resumeId, versionId]);
 
   const canSave = useMemo(
     () => Boolean(content.header.name.trim()) && Boolean(content.header.role.trim()),
@@ -259,6 +356,7 @@ export default function ManualResumeBuilder({ template }: ManualResumeBuilderPro
         <CardContent className="space-y-4">
           {error ? <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
           {status ? <p className="rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm text-cyan-800">{status}</p> : null}
+          <p className="text-xs text-slate-600">Draft autosaves in this browser, so refresh/offline won&apos;t lose your edits.</p>
 
           {template.photoMode === "with-photo" ? (
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
