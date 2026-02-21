@@ -25,6 +25,7 @@ type ManualResumeDraft = {
   content: OptimizedResumeContent;
   resumeId: string;
   versionId: string;
+  updatedAt?: string;
 };
 
 function createEmptyExperience(): OptimizedResumeContent["experience"][number] {
@@ -149,7 +150,11 @@ function createInitialContent(): OptimizedResumeContent {
   };
 }
 
-function getDraftStorageKey(userId: string, templateId: string) {
+function getUserDraftStorageKey(userId: string) {
+  return `${MANUAL_RESUME_DRAFT_STORAGE_PREFIX}:${userId}`;
+}
+
+function getTemplateDraftStorageKey(userId: string, templateId: string) {
   return `${MANUAL_RESUME_DRAFT_STORAGE_PREFIX}:${userId}:${templateId}`;
 }
 
@@ -200,13 +205,51 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
   const [error, setError] = useState("");
   const [status, setStatus] = useState("");
   const isDraftHydrated = useRef(false);
-  const draftStorageKey = useMemo(() => getDraftStorageKey(userId, template.id), [template.id, userId]);
+  const userDraftStorageKey = useMemo(() => getUserDraftStorageKey(userId), [userId]);
+  const legacyTemplateDraftStorageKey = useMemo(
+    () => getTemplateDraftStorageKey(userId, template.id),
+    [template.id, userId]
+  );
 
   useEffect(() => {
     isDraftHydrated.current = false;
 
     try {
-      const rawDraft = window.localStorage.getItem(draftStorageKey);
+      const readDraft = (value: string | null) => {
+        if (!value) return null;
+        const parsedDraft = JSON.parse(value) as unknown;
+        return isManualResumeDraft(parsedDraft) ? parsedDraft : null;
+      };
+
+      const directDraft =
+        readDraft(window.localStorage.getItem(userDraftStorageKey)) ||
+        readDraft(window.localStorage.getItem(legacyTemplateDraftStorageKey));
+      let resolvedDraft = directDraft;
+
+      if (!resolvedDraft) {
+        for (let index = 0; index < window.localStorage.length; index += 1) {
+          const key = window.localStorage.key(index);
+          if (!key || !key.startsWith(`${MANUAL_RESUME_DRAFT_STORAGE_PREFIX}:${userId}:`)) {
+            continue;
+          }
+
+          const candidate = readDraft(window.localStorage.getItem(key));
+          if (!candidate) continue;
+
+          if (!resolvedDraft) {
+            resolvedDraft = candidate;
+            continue;
+          }
+
+          const currentTime = Date.parse(String(resolvedDraft.updatedAt || ""));
+          const nextTime = Date.parse(String(candidate.updatedAt || ""));
+          if (Number.isFinite(nextTime) && (!Number.isFinite(currentTime) || nextTime > currentTime)) {
+            resolvedDraft = candidate;
+          }
+        }
+      }
+
+      const rawDraft = resolvedDraft;
       if (!rawDraft) {
         setContent(createInitialContent());
         setResumeId("");
@@ -214,17 +257,9 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
         return;
       }
 
-      const parsedDraft = JSON.parse(rawDraft) as unknown;
-      if (!isManualResumeDraft(parsedDraft)) {
-        setContent(createInitialContent());
-        setResumeId("");
-        setVersionId("");
-        return;
-      }
-
-      setContent(parsedDraft.content);
-      setResumeId(typeof parsedDraft.resumeId === "string" ? parsedDraft.resumeId : "");
-      setVersionId(typeof parsedDraft.versionId === "string" ? parsedDraft.versionId : "");
+      setContent(rawDraft.content);
+      setResumeId(typeof rawDraft.resumeId === "string" ? rawDraft.resumeId : "");
+      setVersionId(typeof rawDraft.versionId === "string" ? rawDraft.versionId : "");
       setStatus("Restored your local draft.");
     } catch {
       setContent(createInitialContent());
@@ -233,7 +268,7 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
     } finally {
       isDraftHydrated.current = true;
     }
-  }, [draftStorageKey]);
+  }, [legacyTemplateDraftStorageKey, userDraftStorageKey, userId]);
 
   useEffect(() => {
     if (!isDraftHydrated.current) {
@@ -244,13 +279,16 @@ export default function ManualResumeBuilder({ template, userId }: ManualResumeBu
       const draftPayload: ManualResumeDraft = {
         content,
         resumeId,
-        versionId
+        versionId,
+        updatedAt: new Date().toISOString()
       };
-      window.localStorage.setItem(draftStorageKey, JSON.stringify(draftPayload));
+      const serializedDraft = JSON.stringify(draftPayload);
+      window.localStorage.setItem(userDraftStorageKey, serializedDraft);
+      window.localStorage.setItem(legacyTemplateDraftStorageKey, serializedDraft);
     } catch {
       // Ignore browser storage quota/privacy failures and keep in-memory editing.
     }
-  }, [content, draftStorageKey, resumeId, versionId]);
+  }, [content, legacyTemplateDraftStorageKey, resumeId, userDraftStorageKey, versionId]);
 
   const canSave = useMemo(
     () => Boolean(content.header.name.trim()) && Boolean(content.header.role.trim()),

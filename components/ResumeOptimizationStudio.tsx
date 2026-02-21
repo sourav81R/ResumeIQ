@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { JOB_DESCRIPTION_PREVIEW_EVENT, JobDescriptionPreviewDetail } from "@/lib/job-description-preview";
 import { optimizedResumeContentToPlainText } from "@/lib/optimized-resume-render";
+import { buildResumeContentFromText } from "@/lib/resume-preview-seed";
 import { buildTemplatePreviewContent } from "@/lib/template-preview-data";
 import { normalizeUiError } from "@/lib/ui-error";
 import { OptimizedResumeContent, OptimizedResumeVersion, ResumeTemplate } from "@/types";
@@ -428,18 +429,27 @@ export default function ResumeOptimizationStudio({
     () => templates.filter((template) => template.photoMode === templateMode),
     [templateMode, templates]
   );
+  const seededPreviewFromResumeText = useMemo(() => {
+    const sourceText = String(originalResumeText || "").trim();
+    if (!sourceText) {
+      return null;
+    }
+
+    return buildResumeContentFromText(sourceText, jobRole);
+  }, [jobRole, originalResumeText]);
   const selectedTemplate = useMemo(
     () => templates.find((template) => template.id === selectedTemplateId) || null,
     [selectedTemplateId, templates]
   );
   const templatePreviewMap = useMemo(() => {
+    const baseUserPreview = draftContent || seededPreviewFromResumeText;
     const entries = templates.map((template) => {
-      const basePreview = buildTemplatePreviewContent(template);
+      const basePreview = baseUserPreview ? cloneContent(baseUserPreview) : buildTemplatePreviewContent(template);
       const jobAwarePreview = applyJobDescriptionToPreview(basePreview, jobDescriptionSignal, jobRole);
       return [template.id, jobAwarePreview] as const;
     });
     return Object.fromEntries(entries) as Record<string, OptimizedResumeContent>;
-  }, [jobDescriptionSignal, jobRole, templates]);
+  }, [draftContent, jobDescriptionSignal, jobRole, seededPreviewFromResumeText, templates]);
   const previewTemplate = useMemo(
     () =>
       templates.find((template) => template.id === previewTemplateId) ||
@@ -454,7 +464,7 @@ export default function ResumeOptimizationStudio({
       previewTemplate ? templatePreviewMap[previewTemplate.id] || buildTemplatePreviewContent(previewTemplate) : null,
     [previewTemplate, templatePreviewMap]
   );
-  const latestPreviewContent = draftContent || previewTemplateContent;
+  const latestPreviewContent = previewTemplateContent;
   const latestImprovedPreviewText = useMemo(
     () => (draftContent ? optimizedResumeContentToPlainText(draftContent).slice(0, 2600) : ""),
     [draftContent]
