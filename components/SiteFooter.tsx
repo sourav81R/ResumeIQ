@@ -45,7 +45,9 @@ export default function SiteFooter() {
                 <Linkedin className="h-4 w-4" />
               </a>
               <a
-                href="/"
+                href="https://portfolio-topaz-eight-91.vercel.app/"
+                target="_blank"
+                rel="noreferrer"
                 aria-label="ResumeIQ website"
                 className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 bg-[#0b2242]/75 text-slate-200 transition hover:border-cyan-400 hover:bg-[#11325a] hover:text-cyan-300"
               >
